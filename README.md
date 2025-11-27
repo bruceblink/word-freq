@@ -43,6 +43,9 @@ news_list = [
 * **TextRank 关键词**
 * **词频统计结果**
 * 每个日期的 **趋势词云图片**在 `wordclouds/` 文件夹
+![2015-11-25](wordclouds/wordcloud_2025-11-25.png)
+![2015-11-26](wordclouds/wordcloud_2025-11-26.png)
+
 
 ## 文件说明
 
