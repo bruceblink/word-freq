@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import jieba
 import jieba.analyse
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -6,6 +5,8 @@ from collections import Counter
 import re
 import os
 import urllib.request
+from wordcloud import WordCloud
+from collections import defaultdict
 
 # ------------------------------
 # 配置
@@ -13,6 +14,10 @@ import urllib.request
 STOP_WORDS_FILE = "stopwords.txt"  # 自定义停用词，每行一个词
 HIT_STOPWORDS_URL = "https://raw.githubusercontent.com/goto456/stopwords/master/cn_stopwords.txt"
 HIT_STOPWORDS_FILE = "cn_stopwords.txt"  # 哈工大中文停用词表
+WORDCLOUD_OUTPUT_DIR = "wordclouds"
+
+if not os.path.exists(WORDCLOUD_OUTPUT_DIR):
+    os.makedirs(WORDCLOUD_OUTPUT_DIR)
 
 # ------------------------------
 # 下载停用词表（如果没有）
@@ -53,7 +58,7 @@ def segment_text(text):
     return [w for w in jieba.cut(text) if w.strip()]
 
 # ------------------------------
-# 1. TF-IDF 高权重词
+# 1. TF-IDF 高频词
 # ------------------------------
 def tfidf_keywords(corpus, top_k=20, ngram_range=(1,2), stopwords=None):
     vectorizer = TfidfVectorizer(
@@ -91,34 +96,71 @@ def count_words(corpus, stopwords=None, min_len=2):
     return counter
 
 # ------------------------------
+# 4. 时间窗口趋势词统计 & 生成词云
+# ------------------------------
+def generate_trend_wordcloud(news_by_date, stopwords=None, min_len=2):
+    """
+    news_by_date: dict, key=日期字符串 'YYYY-MM-DD', value=list of news titles/texts
+    """
+    import matplotlib.pyplot as plt
+
+    for date_str, texts in news_by_date.items():
+        counter = count_words(texts, stopwords=stopwords, min_len=min_len)
+        if not counter:
+            continue
+        wc = WordCloud(
+            font_path="simhei.ttf",  # 中文字体
+            width=800,
+            height=600,
+            background_color="white"
+        )
+        wc.generate_from_frequencies(counter)
+        out_file = os.path.join(WORDCLOUD_OUTPUT_DIR, f"wordcloud_{date_str}.png")
+        wc.to_file(out_file)
+        print(f"生成词云: {out_file}")
+        # 可选：显示
+        # plt.imshow(wc, interpolation="bilinear")
+        # plt.axis("off")
+        # plt.show()
+
+# ------------------------------
 # 示例运行
 # ------------------------------
 if __name__ == "__main__":
+    # 示例新闻标题/正文
     news_list = [
-        "人工智能技术在医疗领域的应用取得突破",
-        "全球气候变化加剧，联合国发布最新报告",
-        "新冠疫苗接种率提升，儿童群体受关注",
-        "AI 驱动的自动驾驶技术正在快速发展"
+        ("2025-11-25", "人工智能技术在医疗领域的应用取得突破"),
+        ("2025-11-25", "全球气候变化加剧，联合国发布最新报告"),
+        ("2025-11-26", "新冠疫苗接种率提升，儿童群体受关注"),
+        ("2025-11-26", "AI 驱动的自动驾驶技术正在快速发展")
     ]
 
     stopwords = load_stopwords(custom_file=STOP_WORDS_FILE, hit_file=HIT_STOPWORDS_FILE)
 
     # 1. TF-IDF
-    tfidf_res = tfidf_keywords(news_list, top_k=10, ngram_range=(1,2), stopwords=stopwords)
+    corpus = [text for _, text in news_list]
+    tfidf_res = tfidf_keywords(corpus, top_k=10, ngram_range=(1,2), stopwords=stopwords)
     print("=== TF-IDF 高权重词 ===")
     for word, weight in tfidf_res:
         print(word, f"{weight:.4f}")
 
     # 2. TextRank
     print("\n=== TextRank 关键词 ===")
-    for text in news_list:
+    for _, text in news_list:
         kws = textrank_keywords(text, top_k=5)
         print(f"标题: {text}")
         for kw, weight in kws:
             print(f"  {kw} ({weight:.4f})")
 
     # 3. 词频统计
-    counter = count_words(news_list, stopwords=stopwords)
+    counter = count_words(corpus, stopwords=stopwords)
     print("\n=== 词频统计 ===")
     for word, freq in counter.most_common(10):
         print(word, freq)
+
+    # 4. 时间窗口趋势词 + 词云
+    news_by_date = defaultdict(list)
+    for date_str, text in news_list:
+        news_by_date[date_str].append(text)
+
+    generate_trend_wordcloud(news_by_date, stopwords=stopwords)
