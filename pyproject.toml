@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wordfreq"
+version = "0.0.1"
+description = "中文新闻词频分析与趋势词云工具"
+authors = [{name = "likanug", email = "likanug.g@qq.com"}]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+
+dependencies = [
+    "jieba",
+    "scikit-learn",
+    "wordcloud",
+    "matplotlib"
+]
+
+[project.scripts]
+wordfreq = "wordfreq.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["wordfreq*"]
+exclude = ["wordclouds"]
