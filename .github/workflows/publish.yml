@@ -1,13 +1,13 @@
-name: Publish Python Package
+name: Build and Publish Python Package
 
 on:
   push:
     tags:
-      - "v*"  # 只有打 tag 才触发发布
+      - "v*"   # 只有打 tag 时触发
 
 jobs:
   build-and-publish:
-    name: Build and Publish
+    name: Build, Publish to PyPI & GitHub Release
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +24,7 @@ jobs:
       # 3. 安装构建工具
       - name: Install build tools
         run: |
-          python -m pip install --upgrade pip setuptools wheel twine
+          python -m pip install --upgrade pip build twine
 
       # 4. 构建包
       - name: Build package
@@ -37,3 +37,18 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+      # 6. 创建 GitHub Release 并上传构建文件
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload assets to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "dist/*"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
