@@ -7,6 +7,7 @@ import re
 import os
 import urllib.request
 from wordcloud import WordCloud
+from importlib.resources import files
 
 # 停用词加载
 def load_stopwords(custom_file=None, hit_file=None):
@@ -20,7 +21,8 @@ def load_stopwords(custom_file=None, hit_file=None):
             for line in f:
                 stopwords.add(line.strip().lower())
     # 默认的stopwords list
-    with open("cn_stopwords.txt", "r", encoding="utf-8") as f:
+    stopwords_file = files('wordfreq_cn.data') / 'cn_stopwords.txt'
+    with open(str(stopwords_file), "r", encoding="utf-8") as f:
         for line in f:
             stopwords.add(line.strip().lower())
     return list(stopwords)
@@ -73,11 +75,12 @@ def generate_trend_wordcloud(news_by_date, stopwords=None, min_len=2, output_dir
     file_list = []
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+    font_path = files('wordfreq_cn.data.fonts') / 'SourceHanSansHWSC-VF.ttf'
     for date_str, texts in news_by_date.items():
         counter = count_words(texts, stopwords=stopwords, min_len=min_len)
         if not counter:
             continue
-        wc = WordCloud(font_path="SourceHanSansHWSC-VF.ttf", width=800, height=600, background_color="white")
+        wc = WordCloud(font_path=str(font_path), width=800, height=600, background_color="white")
         wc.generate_from_frequencies(counter)
         out_file = os.path.join(output_dir, f"wordcloud_{date_str}.png")
         wc.to_file(out_file)
