@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-wordfreq-cn = "wordfreq.cli:main"
+wordfreq-cn = "wordfreq_cn.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["wordfreq*"]
