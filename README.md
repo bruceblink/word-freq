@@ -1,4 +1,4 @@
-# [新闻词频分析与趋势词可视化](https://pypi.org/project/wordfreq-cn/)
+# [新闻词频分析与趋势词可视化](https://github.com/bruceblink/word-freq)
 
 ## 功能
 
