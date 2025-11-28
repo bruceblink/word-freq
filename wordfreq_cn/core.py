@@ -19,6 +19,10 @@ def load_stopwords(custom_file=None, hit_file=None):
         with open(custom_file, "r", encoding="utf-8") as f:
             for line in f:
                 stopwords.add(line.strip().lower())
+    # 默认的stopwords list
+    with open("cn_stopwords.txt", "r", encoding="utf-8") as f:
+        for line in f:
+            stopwords.add(line.strip().lower())
     return list(stopwords)
 
 # 文本处理函数
