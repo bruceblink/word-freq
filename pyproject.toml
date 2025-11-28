@@ -24,3 +24,16 @@ wordfreq-cn = "wordfreq_cn.cli:main"
 [tool.setuptools.packages.find]
 include = ["wordfreq*"]
 exclude = ["wordclouds"]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-mock>=3.0",
+    "pytest-cov>=4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
