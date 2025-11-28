@@ -7,7 +7,7 @@
 * **词频统计**
 * 按 **时间窗口生成趋势词云**
 * 支持自定义停用词表，过滤中文虚词
-* 可直接通过命令行工具 `wordfreq` 运行
+* 可直接通过命令行工具 `wordfreq-cn` 运行
 
 ---
 
@@ -30,7 +30,7 @@ pip install .
 ### 1. 命令行运行
 
 ```bash
-  wordfreq --news "人工智能技术在医疗领域的应用取得突破" "全球气候变化加剧" --topk 5
+  wordfreq-cn --news "人工智能技术在医疗领域的应用取得突破" "全球气候变化加剧" --topk 5
 ```
 
 * `--news`：新闻标题或正文列表，可传多个
@@ -66,7 +66,7 @@ pip install .
 ### 2. Python 调用
 
 ```python
-from wordfreq import tfidf_keywords, textrank_keywords, count_words, generate_trend_wordcloud, load_stopwords
+from wordfreq_cn import tfidf_keywords, textrank_keywords, count_words, generate_trend_wordcloud, load_stopwords
 
 news_list = [
     ("2025-11-25", "人工智能技术在医疗领域的应用取得突破"),
@@ -85,6 +85,7 @@ print(counter)
 
 # 按日期生成词云
 from collections import defaultdict
+
 news_by_date = defaultdict(list)
 for date, text in news_list:
     news_by_date[date].append(text)
