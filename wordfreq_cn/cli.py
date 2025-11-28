@@ -1,6 +1,6 @@
 # wordfreq_cn/cli.py
 import argparse
-from .core import tfidf_keywords, textrank_keywords, count_words, generate_trend_wordcloud, load_stopwords
+from .core import extract_keywords_tfidf, extract_keywords_textrank, count_word_frequency, generate_trend_wordcloud, load_stopwords
 from collections import defaultdict
 
 def main():
@@ -13,7 +13,7 @@ def main():
     stopwords = load_stopwords(custom_file=args.stopwords)
 
     # TF-IDF
-    tfidf_res = tfidf_keywords(args.news, top_k=args.topk, stopwords=stopwords)
+    tfidf_res = extract_keywords_tfidf(args.news, top_k=args.topk, stopwords=stopwords)
     print("=== TF-IDF 高权重词 ===")
     for word, weight in tfidf_res:
         print(word, f"{weight:.4f}")
@@ -21,13 +21,13 @@ def main():
     # TextRank
     print("\n=== TextRank 关键词 ===")
     for text in args.news:
-        kws = textrank_keywords(text, top_k=args.topk)
+        kws = extract_keywords_textrank(text, top_k=args.topk)
         print(f"标题: {text}")
         for kw, weight in kws:
             print(f"  {kw} ({weight:.4f})")
 
     # 词频统计
-    counter = count_words(args.news, stopwords=stopwords)
+    counter = count_word_frequency(args.news, stopwords=stopwords)
     print("\n=== 词频统计 ===")
     for word, freq in counter.most_common(args.topk):
         print(word, freq)

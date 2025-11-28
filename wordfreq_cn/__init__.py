@@ -1,17 +1,21 @@
 # wordfreq_cn/__init__.py
 
 from .core import (
-    tfidf_keywords,
-    textrank_keywords,
-    count_words,
+    load_stopwords,
+    clean_text,
+    segment_text,
+    extract_keywords_tfidf,
+    extract_keywords_textrank,
+    count_word_frequency,
     generate_trend_wordcloud,
-    load_stopwords
 )
 
 __all__ = [
-    "tfidf_keywords",
-    "textrank_keywords",
-    "count_words",
-    "generate_trend_wordcloud",
-    "load_stopwords"
+    "load_stopwords",
+    "clean_text",
+    "segment_text",
+    "extract_keywords_tfidf",
+    "extract_keywords_textrank",
+    "count_word_frequency",
+    "generate_trend_wordcloud"
 ]
