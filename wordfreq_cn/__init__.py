@@ -1,4 +1,4 @@
-# wordfreq/__init__.py
+# wordfreq_cn/__init__.py
 
 from .core import (
     tfidf_keywords,

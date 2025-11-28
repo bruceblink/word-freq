@@ -1,4 +1,4 @@
-# wordfreq/core.py
+# wordfreq_cn/core.py
 import jieba
 import jieba.analyse
 from sklearn.feature_extraction.text import TfidfVectorizer

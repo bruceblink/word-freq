@@ -1,4 +1,4 @@
-# wordfreq/cli.py
+# wordfreq_cn/cli.py
 import argparse
 from .core import tfidf_keywords, textrank_keywords, count_words, generate_trend_wordcloud, load_stopwords
 from collections import defaultdict
