@@ -36,19 +36,19 @@ jobs:
         run: |
           python -m build --sdist --wheel
 
-      # 6. 发布到 PyPI
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.7.0
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-
       - name: Debug built packages (可选)
         run: |
           for f in dist/*.whl; do
             echo "== $f =="
             unzip -p "$f" '*/METADATA'
           done
+
+      # 6. 发布到 PyPI
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.7.0
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
 
       # 7. 创建 GitHub Release 并上传构建文件
       - name: Create GitHub Release
