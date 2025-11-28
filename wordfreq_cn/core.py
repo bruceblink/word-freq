@@ -32,6 +32,8 @@ def segment_text(text):
 
 # TF-IDF
 def tfidf_keywords(corpus, top_k=20, ngram_range=(1,2), stopwords=None):
+    if not corpus:
+        return []
     vectorizer = TfidfVectorizer(
         max_features=1000,
         ngram_range=ngram_range,
