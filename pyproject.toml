@@ -12,10 +12,10 @@ license = "MIT"
 requires-python = ">=3.12"
 
 dependencies = [
-    "jieba",
-    "scikit-learn",
-    "wordcloud",
-    "matplotlib"
+    "jieba>=0.42.1",
+    "scikit-learn>=1.7.2",
+    "wordcloud>=1.9.4",
+    "matplotlib>=3.10.7"
 ]
 
 [project.scripts]
