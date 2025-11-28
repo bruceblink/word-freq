@@ -23,9 +23,6 @@ pip install .
 # 在线安装
 pip install wordfreq-cn
 ```
-
-> 注意：中文词云需要字体文件 `simhei.ttf`，可放在项目目录或系统字体目录。
-
 ---
 
 ## 使用方法
@@ -122,20 +119,19 @@ pytest --cov=wordfreq_cn --cov-report=html
 
 ## 文件说明
 
-| 文件名                | 说明                     |
-|--------------------|------------------------|
-| `wordfreq_cn/`     | Python 包目录，包含核心逻辑和 CLI |
-| `stopwords.txt`    | 可选自定义停用词文件             |
-| `cn_stopwords.txt` | 哈工大中文停用词表（脚本可自动加载）     |
-| `wordclouds/`      | 存放生成的词云图片              |
-| `tests/`           | 单元测试代码                 |
-| `simhei.ttf`       | 中文字体文件，用于生成中文词云        |
+| 文件名                         | 说明                     |
+|-----------------------------|------------------------|
+| `wordfreq_cn/`              | Python 包目录，包含核心逻辑和 CLI |
+| `stopwords.txt`             | 可选自定义停用词文件             |
+| `cn_stopwords.txt`          | 哈工大中文停用词表（脚本可自动加载）     |
+| `wordclouds/`               | 存放生成的词云图片              |
+| `tests/`                    | 单元测试代码                 |
+| `SourceHanSansHWSC-VF.ttf`  | 《思源黑体》中文字体文件，用于生成中文词云  |
 
 ---
 
 ## 注意事项
 
-* 中文词云需要字体文件 `simhei.ttf`，可以从网上下载或使用系统自带中文字体。
 * 如果新闻量大，可在 `tfidf_keywords` 函数中调整 `max_features` 和 `top_k` 参数。
 * 建议停用词表包含常用虚词（如“的”“在”“是”）以获得更干净的词频统计结果。
 * 安装后，可以直接使用 `wordfreq-cn` 命令，无需运行 `python main.py`或者`python wordfreq_cn/cli.py` 之类的命令使用。
