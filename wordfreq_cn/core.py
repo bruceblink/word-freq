@@ -63,7 +63,8 @@ def count_words(corpus, stopwords=None, min_len=2):
     return counter
 
 # 时间窗口词云
-def generate_trend_wordcloud(news_by_date, stopwords=None, min_len=2, output_dir="wordclouds"):
+def generate_trend_wordcloud(news_by_date, stopwords=None, min_len=2, output_dir="wordclouds") -> list[str]:
+    file_list = []
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     for date_str, texts in news_by_date.items():
@@ -74,3 +75,5 @@ def generate_trend_wordcloud(news_by_date, stopwords=None, min_len=2, output_dir
         wc.generate_from_frequencies(counter)
         out_file = os.path.join(output_dir, f"wordcloud_{date_str}.png")
         wc.to_file(out_file)
+        file_list.append(out_file)
+    return file_list

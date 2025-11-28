@@ -36,4 +36,5 @@ def main():
     news_by_date = defaultdict(list)
     for i, text in enumerate(args.news):
         news_by_date[f"day{i+1}"].append(text)
-    generate_trend_wordcloud(news_by_date, stopwords=stopwords)
+    files = generate_trend_wordcloud(news_by_date, stopwords=stopwords)
+    print(files)
