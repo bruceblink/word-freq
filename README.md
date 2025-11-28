@@ -119,14 +119,14 @@ pytest --cov=wordfreq_cn --cov-report=html
 
 ## 文件说明
 
-| 文件名                         | 说明                     |
-|-----------------------------|------------------------|
-| `wordfreq_cn/`              | Python 包目录，包含核心逻辑和 CLI |
-| `stopwords.txt`             | 可选自定义停用词文件             |
-| `cn_stopwords.txt`          | 哈工大中文停用词表（脚本可自动加载）     |
-| `wordclouds/`               | 存放生成的词云图片              |
-| `tests/`                    | 单元测试代码                 |
-| `SourceHanSansHWSC-VF.ttf`  | 《思源黑体》中文字体文件，用于生成中文词云  |
+| 文件名                                               | 说明                     |
+|---------------------------------------------------|------------------------|
+| `wordfreq_cn/`                                    | Python 包目录，包含核心逻辑和 CLI |
+| `wordfreq_cn/data/stopwords.txt`                  | 可选自定义停用词文件             |
+| `wordfreq_cn/data/cn_stopwords.txt`               | 哈工大中文停用词表（脚本可自动加载）     |
+| `wordfreq_cn/data/fonts/SourceHanSansHWSC-VF.ttf` | 《思源黑体》中文字体文件，用于生成中文词云  |
+| `wordclouds/`                                     | 存放生成的词云图片              |
+| `tests/`                                          | 单元测试代码                 |
 
 ---
 
