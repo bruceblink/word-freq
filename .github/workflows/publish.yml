@@ -43,6 +43,13 @@ jobs:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
 
+      - name: Debug built packages (可选)
+        run: |
+          for f in dist/*.whl; do
+            echo "== $f =="
+            unzip -p "$f" '*/METADATA'
+          done
+
       # 7. 创建 GitHub Release 并上传构建文件
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
