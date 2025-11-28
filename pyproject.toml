@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "wordfreq"
+name = "wordfreq-cn"
 version = "0.0.2"
 description = "中文新闻词频分析与趋势词云工具"
 authors = [{name = "likanug", email = "likanug.g@qq.com"}]
@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-wordfreq = "wordfreq.cli:main"
+wordfreq-cn = "wordfreq.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["wordfreq*"]
