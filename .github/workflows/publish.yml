@@ -45,7 +45,7 @@ jobs:
 
       # 6. 发布到 PyPI
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.9.0
+        uses: pypa/gh-action-pypi-publish@vv1.12.3
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
