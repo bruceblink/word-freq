@@ -101,14 +101,34 @@ generate_trend_wordcloud(news_by_date, stopwords=stopwords)
 
 ---
 
+## 测试
+
+```bash
+# 运行所有测试
+pytest
+
+# 运行特定测试文件
+pytest tests/test_core.py -v
+
+# 运行特定测试类
+pytest tests/test_core.py::TestTFIDFKeywords -v
+
+# 带覆盖率报告
+pytest --cov=wordfreq_cn
+
+# 生成 HTML 覆盖率报告
+pytest --cov=wordfreq_cn --cov-report=html
+```
+
 ## 文件说明
 
 | 文件名                | 说明                     |
-|--------------------| ---------------------- |
+|--------------------|------------------------|
 | `wordfreq_cn/`     | Python 包目录，包含核心逻辑和 CLI |
 | `stopwords.txt`    | 可选自定义停用词文件             |
 | `cn_stopwords.txt` | 哈工大中文停用词表（脚本可自动加载）     |
 | `wordclouds/`      | 存放生成的词云图片              |
+| `tests/`           | 单元测试代码                 |
 | `simhei.ttf`       | 中文字体文件，用于生成中文词云        |
 
 ---
