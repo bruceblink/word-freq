@@ -25,6 +25,15 @@ wordfreq-cn = "wordfreq_cn.cli:main"
 include = ["wordfreq*"]
 exclude = ["wordclouds"]
 
+# 配置包内资源文件
+[tool.setuptools.package-data]
+wordfreq_cn = [
+    "data/fonts/*.ttf",
+    "data/fonts/*.ttc",
+    "data/fonts/*.otf",
+    "data/*.txt"
+]
+
 [project.optional-dependencies]
 test = [
     "pytest>=7.0",
