@@ -1,4 +1,4 @@
-# 新闻词频分析与趋势词可视化
+# [新闻词频分析与趋势词可视化](https://pypi.org/project/wordfreq-cn/)
 
 ## 功能
 
@@ -19,6 +19,9 @@ pip install jieba scikit-learn wordcloud matplotlib
 
 # 安装本地包（如果使用源代码）
 pip install .
+
+# 在线安装
+pip install wordfreq-cn
 ```
 
 > 注意：中文词云需要字体文件 `simhei.ttf`，可放在项目目录或系统字体目录。
