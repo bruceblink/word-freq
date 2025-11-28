@@ -77,7 +77,7 @@ def generate_trend_wordcloud(news_by_date, stopwords=None, min_len=2, output_dir
         counter = count_words(texts, stopwords=stopwords, min_len=min_len)
         if not counter:
             continue
-        wc = WordCloud(font_path="simhei.ttf", width=800, height=600, background_color="white")
+        wc = WordCloud(font_path="SourceHanSansHWSC-VF.ttf", width=800, height=600, background_color="white")
         wc.generate_from_frequencies(counter)
         out_file = os.path.join(output_dir, f"wordcloud_{date_str}.png")
         wc.to_file(out_file)
