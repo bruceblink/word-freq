@@ -51,12 +51,12 @@ def run_tfidf(args):
     )
     # 输出 JSON 或文本
     if args.json:
-        data = [{"word": kw.word, "weight": kw.weight} for kw in result.keywords]
+        data = [{"word": w, "weight": s} for w, s in result]  # <-- 解包 tuple
         print(json.dumps(data, ensure_ascii=False, indent=2))
     else:
         print("=== TF-IDF 关键词 ===")
-        for kw in result.keywords:
-            print(f"{kw.word}\t{kw.weight:.4f}")
+        for w, s in result:  # <-- 解包 tuple
+            print(f"{w}\t{s:.4f}")
 
 
 def run_textrank(args):
@@ -64,6 +64,9 @@ def run_textrank(args):
     stopwords = load_stopwords(args.stopwords)
 
     all_results = []
+    if not args.json:
+        print("\n=== TextRank 关键词 ===")  #
+
     for text in news:
         kws = extract_keywords_textrank(
             text=text,
@@ -71,15 +74,16 @@ def run_textrank(args):
             with_weight=True,
             stopwords=stopwords
         )
+
         if args.json:
             all_results.append({
                 "news": text,
-                "keywords": [{"word": kw.word, "weight": kw.weight} for kw in kws]
+                "keywords": [{"word": w, "weight": s} for w, s in kws]  # tuple 解包
             })
         else:
             print(f"\n【新闻】{text[:40]}...")
-            for kw in kws:
-                print(f"{kw.word}\t{kw.weight:.4f}")
+            for w, s in kws:
+                print(f"{w}\t{s:.4f}")
 
     if args.json:
         print(json.dumps(all_results, ensure_ascii=False, indent=2))
