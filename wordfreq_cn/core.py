@@ -76,7 +76,7 @@ class TfIdfResult:
 # Stopwords
 # ---------------------------
 
-def load_stopwords(custom_file: str | None = None, hit_file: str | None = None) -> list[str]:
+def load_stopwords(custom_file: str | None = None, hit_file: str | None = None) -> set[str]:
     """
     加载停用词集合（hit_file -> custom_file -> package 内置）
 
@@ -111,7 +111,7 @@ def load_stopwords(custom_file: str | None = None, hit_file: str | None = None) 
     except Exception as e:
         logger.debug("Failed to load builtin stopwords: %s", e)
 
-    return sorted(stopwords)
+    return stopwords
 
 
 # ---------------------------
@@ -192,7 +192,7 @@ def extract_keywords_tfidf(
         corpus: list[str],
         top_k: int = 20,
         ngram_range: tuple[int, int] = DEFAULT_NGRAM_RANGE,
-        stopwords: list[str] | None = None,
+        stopwords: set[str] | None = None,
         max_features: int = DEFAULT_MAX_FEATURES,
         min_df: int = 1,
         max_df: float = 0.95,
@@ -222,7 +222,7 @@ def extract_keywords_tfidf(
     vectorizer = TfidfVectorizer(
         max_features=max_features,
         ngram_range=ngram_range,
-        stop_words=stopwords,
+        stop_words=list(stopwords),
         token_pattern=token_pattern,
         lowercase=True,
         sublinear_tf=sublinear_tf,
@@ -256,7 +256,7 @@ def extract_keywords_tfidf_per_doc(
         corpus: list[str],
         top_k: int = 10,
         ngram_range: tuple[int, int] = DEFAULT_NGRAM_RANGE,
-        stopwords: list[str] | None= None,
+        stopwords: set[str] | None = None,
         max_features: int = DEFAULT_MAX_FEATURES,
         min_df: int = 1,
         max_df: float = 0.95,
@@ -307,7 +307,7 @@ def extract_keywords_textrank(
         text: str,
         top_k: int = 20,
         with_weight: bool = True,
-        stopwords: list[str] | None = None,
+        stopwords: set[str] | None = None,
         min_len: int = 2,
         allow_pos: tuple[str, ...] = ("ns", "n", "vn", "v")
 ) -> list[str | KeywordItem]:
@@ -368,7 +368,7 @@ def _generate_ngrams(words: list[str], n: int) -> list[str]:
 
 def count_word_frequency(
         corpus: list[str],
-        stopwords: list[str] | None = None,
+        stopwords: set[str] | None = None,
         min_len: int = 2,
         ngram_range: tuple[int, int] = (1, 1)
 ) -> Counter:
@@ -455,7 +455,7 @@ def generate_wordcloud(
 
 def generate_trend_wordcloud(
         news_by_date: dict[str, list[str]],
-        stopwords: list[str] | None = None,
+        stopwords: set[str] | None = None,
         min_len: int = 2,
         ngram_range: tuple[int, int] = (1, 1),
         output_dir: str = "wordclouds",
@@ -496,7 +496,7 @@ def extract_keywords(
         data: str | list[str],
         method: str = "textrank",
         top_k: int = 20,
-        stopwords: list[str] | None = None,
+        stopwords: set[str] | None = None,
         **kwargs
 ) -> list[KeywordItem] | list[list[KeywordItem]]:
     """
