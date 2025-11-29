@@ -3,7 +3,6 @@
 **中文新闻词频分析与趋势词可视化工具**
 
 [![PyPI](https://img.shields.io/pypi/v/wordfreq-cn.svg)](https://pypi.org/project/wordfreq-cn/)
-[![Python Version](https://img.shields.io/pypi/pyversions/wordfreq-cn.svg)](https://pypi.org/project/wordfreq-cn/)
 [GitHub](https://github.com/bruceblink/word-freq)
 
 ---
@@ -42,6 +41,7 @@ wordfreq-cn tfidf --news "人工智能技术在医疗领域的应用取得突破
 wordfreq-cn textrank --news "人工智能技术在医疗领域的应用取得突破" --topk 5
 wordfreq-cn freq --news "人工智能技术在医疗领域的应用取得突破" --topk 10
 wordfreq-cn wordcloud --news "人工智能技术在医疗领域的应用取得突破" "全球气候变化加剧"
+wordfreq-cn freq --news "人工智能技术在医疗领域的应用取得突破" --json
 ```
 
 ### 示例输出
@@ -73,6 +73,17 @@ TextRank [2025-11-25]:
 人工智能 1
 医疗 1
 ...
+```
+
+**json输出**
+```json
+{
+  "人工智能技术": 1,
+  "医疗": 1,
+  "应用": 1,
+  "突破": 1
+}
+
 ```
 
 **词云输出目录：**
