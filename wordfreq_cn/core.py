@@ -361,16 +361,10 @@ def count_word_frequency(
     counter = Counter()
     for text in corpus:
         words = preprocess_text(text, stopwords=stopwords, min_len=min_len)
-        if not words:
-            continue
         for n in range(ngram_range[0], ngram_range[1] + 1):
-            if n == 1:
-                counter.update(words)
-            else:
-                grams = _generate_ngrams(words, n)
-                # 过滤长度太短的 gram
-                grams = [g for g in grams if len(g) >= min_len]
-                counter.update(grams)
+            ngrams = words if n == 1 else _generate_ngrams(words, n)
+            # 过滤长度太短的 gram
+            counter.update([g for g in ngrams if len(g) >= min_len])
     return counter
 
 
