@@ -17,7 +17,7 @@ import logging
 import os
 import re
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from functools import lru_cache
 from importlib.resources import files
 from typing import Any
@@ -61,6 +61,15 @@ class TfIdfResult:
     keywords: list[KeywordItem]
     vectorizer: TfidfVectorizer
     matrix: Any  # sparse matrix returned by fit_transform
+
+    def keywords_to_json(self, indent: int = 2, ensure_ascii: bool = False) -> str:
+        """
+        将 keywords 字段转成 JSON 字符串。
+        """
+        if not self.keywords:
+            return "[]"
+        import json
+        return json.dumps([asdict(k) for k in self.keywords], indent=indent, ensure_ascii=ensure_ascii)
 
 
 # ---------------------------
