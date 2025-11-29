@@ -201,6 +201,15 @@ def extract_keywords_tfidf(
     if not corpus:
         return TfIdfResult([], None, None)
 
+    # ----------------------------
+    # 修复单文档时 max_df 问题
+    # ----------------------------
+    n_docs = len(corpus)
+    adjusted_max_df = max_df
+    if n_docs == 1:
+        # 单文档时 max_df 不能小于 min_df
+        adjusted_max_df = 1.0
+
     vectorizer = TfidfVectorizer(
         max_features=max_features,
         ngram_range=ngram_range,
@@ -209,7 +218,7 @@ def extract_keywords_tfidf(
         lowercase=True,
         sublinear_tf=sublinear_tf,
         min_df=min_df,
-        max_df=max_df
+        max_df=adjusted_max_df
     )
 
     X = vectorizer.fit_transform(corpus)  # shape: (n_docs, n_features)
@@ -223,7 +232,7 @@ def extract_keywords_tfidf(
 
     # 包装结果
     kw_items = [KeywordItem(word=feature_names[i], weight=float(weights_array[i]), count=int(doc_counts[i]))
-            for i in range(len(feature_names))]
+                for i in range(len(feature_names))]
 
     # 排序
     kw_items.sort(key=lambda x: x.weight, reverse=True)
