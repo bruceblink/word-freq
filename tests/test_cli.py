@@ -1,8 +1,11 @@
-import pytest
-from unittest.mock import patch, MagicMock
 from io import StringIO
-import sys
+from unittest.mock import patch, MagicMock
+
+import pytest
+
+from wordfreq_cn import KeywordItem, TfIdfResult
 from wordfreq_cn.cli import main
+
 
 class TestCLI:
 
@@ -27,7 +30,8 @@ class TestCLI:
                 patch('sys.stdout', new_callable=StringIO) as mock_stdout:
 
             mock_load_stopwords.return_value = {"的", "了", "是"}
-            mock_extract_tfidf.return_value = [("人工智能", 0.8), ("技术", 0.6)]
+            top_keywords = [KeywordItem("人工智能", 0.8), KeywordItem("技术", 0.6)]
+            mock_extract_tfidf.return_value = TfIdfResult(keywords=top_keywords, vectorizer=None, matrix=None)
 
             test_args = [
                 'wordfreq-cn', 'tfidf',
@@ -46,8 +50,8 @@ class TestCLI:
         """测试 TextRank 子命令"""
         with patch('wordfreq_cn.cli.extract_keywords_textrank') as mock_textrank, \
                 patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-
-            mock_textrank.return_value = [("机器学习", 0.9), ("深度", 0.7)]
+            top_keywords = [KeywordItem("机器学习", 0.9), KeywordItem("深度", 0.7)]
+            mock_textrank.return_value = top_keywords
 
             test_args = [
                 'wordfreq-cn', 'textrank',
@@ -136,7 +140,8 @@ class TestCLI:
                 patch('sys.stdout', new_callable=StringIO) as mock_stdout:
 
             mock_load_stopwords.return_value = {"的", "了"}
-            mock_extract_tfidf.return_value = [("人工智能", 0.8), ("技术", 0.6)]
+            top_keywords = [KeywordItem("人工智能", 0.8), KeywordItem("技术", 0.6)]
+            mock_extract_tfidf.return_value = TfIdfResult(keywords=top_keywords, vectorizer=None, matrix=None)
 
             test_args = [
                 'wordfreq-cn', 'tfidf',
