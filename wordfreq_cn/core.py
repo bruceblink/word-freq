@@ -344,11 +344,8 @@ def extract_keywords_textrank(
 def _generate_ngrams(words: list[str], n: int) -> list[str]:
     if n <= 1:
         return words
-    grams = []
-    L = len(words)
-    for i in range(L - n + 1):
-        grams.append("".join(words[i:i + n]))  # 中文常用连接方式，无空格
-    return grams
+    # 中文常用连接方式，无空格
+    return ["".join(words[i:i + n]) for i in range(len(words) - n + 1)]
 
 
 def count_word_frequency(
