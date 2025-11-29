@@ -91,30 +91,17 @@ jobs:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
 
-      # 8. 安装 Release Drafter CLI
-      - name: Install Release Drafter CLI
-        run: |
-          npm install -g release-drafter
-
-      # 9. 生成 Release Notes
-      - name: Generate release notes
-        id: generate_release_notes
-        run: |
-          NOTES=$(release-drafter draft --version ${{ github.ref_name }})
-          echo "::set-output name=notes::$NOTES"
-
-      # 10. 创建 GitHub Release 并自动发布
+      # 8. 创建 GitHub Release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          body: ${{ steps.generate_release_notes.outputs.notes }}
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 11. 上传 dist 文件到 Release
+      # 9. 上传 dist 文件到 Release
       - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
