@@ -417,8 +417,7 @@ def generate_wordcloud(
     if not frequencies:
         raise ValueError("frequencies is empty")
 
-    if font_path is None:
-        font_path = _get_default_font_path()
+    font_path = font_path or _get_default_font_path()
 
     wc = WordCloud(
         font_path=font_path,
@@ -429,7 +428,7 @@ def generate_wordcloud(
     )
     if colormap:
         # WordCloud 会使用 colormap 参数通过 recolor
-        pass
+        wc.recolor(colormap=colormap)
 
     wc.generate_from_frequencies(frequencies)
     wc.to_file(output_path)
