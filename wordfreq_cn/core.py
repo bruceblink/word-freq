@@ -120,7 +120,7 @@ def load_stopwords(custom_file: str | None = None, hit_file: str | None = None) 
 
 def clean_text(text: str, remove_urls: bool = True, remove_emails: bool = True, remove_digits: bool = False) -> str:
     """
-    基础清洗：去掉非中文/英文/数字字符、合并空白，并可选删除 URL / email / 数字（或保留数字）。
+    基础清洗：去掉非中文/英文/数字字符, 允许英文缩写的撇号保留、合并空白，并可选删除 URL / email / 数字（或保留数字）。
     返回小写形式（英文）。
     """
     if not text:
@@ -128,23 +128,19 @@ def clean_text(text: str, remove_urls: bool = True, remove_emails: bool = True, 
     s = text
 
     if remove_urls:
-        # 简单的 url pattern 去除
         s = re.sub(r"https?://\S+|www\.\S+", " ", s)
 
     if remove_emails:
         s = re.sub(r"\S+@\S+", " ", s)
 
-    # 去掉除了中文/字母/数字之外的字符
-    s = re.sub(r"[^\w\u4e00-\u9fff]", " ", s)
+    # 保留中文、英文、数字、下划线、英文撇号（含 unicode ’）
+    s = re.sub(r"[^\w\u4e00-\u9fff'’]", " ", s)
 
     if remove_digits:
         s = re.sub(r"\d+", " ", s)
 
     s = re.sub(r"\s+", " ", s).strip()
-
-    # 对英文小写化（中文不受影响）
-    s = s.lower()
-    return s
+    return s.lower()
 
 
 import contractions
