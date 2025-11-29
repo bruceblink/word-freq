@@ -222,9 +222,8 @@ def extract_keywords_tfidf(
     doc_counts = np.asarray((X > 0).sum(axis=0)).ravel()
 
     # 包装结果
-    kw_items = []
-    for i, fname in enumerate(feature_names):
-        kw_items.append(KeywordItem(word=fname, weight=float(weights_array[i]), count=int(doc_counts[i])))
+    kw_items = [KeywordItem(word=feature_names[i], weight=float(weights_array[i]), count=int(doc_counts[i]))
+            for i in range(len(feature_names))]
 
     # 排序
     kw_items.sort(key=lambda x: x.weight, reverse=True)
