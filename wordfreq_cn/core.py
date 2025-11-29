@@ -452,19 +452,21 @@ def generate_trend_wordcloud(
     返回生成的文件路径列表（按输入 dict 的 key 顺序）
     """
     os.makedirs(output_dir, exist_ok=True)
-    if font_path is None:
-        font_path = _get_default_font_path()
-
+    font_path = font_path or _get_default_font_path()
     file_list: list[str] = []
-    for date_str, texts in news_by_date.items():
+    for date_str, texts in sorted(news_by_date.items()):
         if not texts:
             continue
         counter = count_word_frequency(texts, stopwords=stopwords, min_len=min_len, ngram_range=ngram_range)
-        if not counter:
-            continue
-        out_file = os.path.join(output_dir, f"wordcloud_{date_str}.png")
-        generate_wordcloud(counter, out_file, font_path=font_path, width=width, height=height, background_color=background_color)
-        file_list.append(out_file)
+        if counter:
+            out_file = os.path.join(output_dir, f"wordcloud_{date_str}.png")
+            generate_wordcloud(counter,
+                               out_file,
+                               font_path=font_path,
+                               width=width,
+                               height=height,
+                               background_color=background_color)
+            file_list.append(out_file)
     return file_list
 
 
