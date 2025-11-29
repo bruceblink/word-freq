@@ -325,9 +325,7 @@ def extract_keywords_textrank(
     sw = set(w.lower() for w in stopwords) if stopwords else set()
     for word, weight in candidates:
         w = word.strip()
-        if not w or len(w) < min_len:
-            continue
-        if w.lower() in sw:
+        if not w or len(w) < min_len or w.lower() in sw:
             continue
         if with_weight:
             results.append(KeywordItem(word=w, weight=float(weight), count=None))
