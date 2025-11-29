@@ -133,8 +133,11 @@ def clean_text(text: str, remove_urls: bool = True, remove_emails: bool = True, 
     if remove_emails:
         s = re.sub(r"\S+@\S+", " ", s)
 
-    # 保留中文、英文、数字、下划线、英文撇号（含 unicode ’）
+    # 保留中文、英文、数字和撇号
     s = re.sub(r"[^\w\u4e00-\u9fff'’]", " ", s)
+
+    # 删除不在单词内部的撇号（确保 didn't / isn't 这种才被保留）
+    s = re.sub(r"(?<![A-Za-z])[’']+|[’']+(?![A-Za-z])", " ", s)
 
     if remove_digits:
         s = re.sub(r"\d+", " ", s)
@@ -215,7 +218,7 @@ def extract_keywords_tfidf(
         token_pattern: str = DEFAULT_TOKEN_PATTERN,
 ) -> TfIdfResult:
     """
-    全局 TF-IDF：基于整个语料库计算 TF-IDF，然后返回 top_k 全局关键词 + 其总权重与出现次数。
+    全局 TF-IDF：基于整个语料库计算 TF-IDF，自动清洗文本 + 展开缩写 + 分词。
 
     返回 TfIdfResult:
       - keywords: list of KeywordItem (word, weight, count)
@@ -226,18 +229,25 @@ def extract_keywords_tfidf(
         return TfIdfResult([], None, None)
 
     # ----------------------------
+    # 文本预处理
+    # ----------------------------
+    processed_corpus = [
+        " ".join(preprocess_text(doc, stopwords=stopwords))
+        for doc in corpus
+    ]
+
+    # ----------------------------
     # 修复单文档时 max_df 问题
     # ----------------------------
-    n_docs = len(corpus)
+    n_docs = len(processed_corpus)
     adjusted_max_df = max_df
     if n_docs == 1:
-        # 单文档时 max_df 不能小于 min_df
         adjusted_max_df = 1.0
 
     vectorizer = TfidfVectorizer(
         max_features=max_features,
         ngram_range=ngram_range,
-        stop_words=list(stopwords),
+        stop_words=None,  # 已经在 preprocess_text 里去停词
         token_pattern=token_pattern,
         lowercase=True,
         sublinear_tf=sublinear_tf,
@@ -245,18 +255,20 @@ def extract_keywords_tfidf(
         max_df=adjusted_max_df
     )
 
-    X = vectorizer.fit_transform(corpus)  # shape: (n_docs, n_features)
+    X = vectorizer.fit_transform(processed_corpus)  # shape: (n_docs, n_features)
     feature_names = vectorizer.get_feature_names_out()
 
     # 按列求和得到每个特征在所有文档中的 TF-IDF 总权重
-    weights_array = np.asarray(X.sum(axis=0)).ravel()  # shape: (n_features,)
+    weights_array = np.asarray(X.sum(axis=0)).ravel()
 
     # 统计每个 token 在多少个文档中出现（非零计数）
     doc_counts = np.asarray((X > 0).sum(axis=0)).ravel()
 
     # 包装结果
-    kw_items = [KeywordItem(word=feature_names[i], weight=float(weights_array[i]), count=int(doc_counts[i]))
-                for i in range(len(feature_names))]
+    kw_items = [
+        KeywordItem(word=feature_names[i], weight=float(weights_array[i]), count=int(doc_counts[i]))
+        for i in range(len(feature_names))
+    ]
 
     # 排序
     kw_items.sort(key=lambda x: x.weight, reverse=True)
