@@ -1,9 +1,6 @@
-# WordFreq-CN
+# [WordFreq-CN](https://github.com/bruceblink/word-freq) [![PyPI](https://img.shields.io/pypi/v/wordfreq-cn.svg)](https://pypi.org/project/wordfreq-cn/)
 
 **中文新闻词频分析与趋势词可视化工具**
-
-[![PyPI](https://img.shields.io/pypi/v/wordfreq-cn.svg)](https://pypi.org/project/wordfreq-cn/)
-[GitHub](https://github.com/bruceblink/word-freq)
 
 ---
 
