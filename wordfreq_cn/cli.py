@@ -78,12 +78,12 @@ def run_textrank(args):
         if args.json:
             all_results.append({
                 "news": text,
-                "keywords": [{"word": w, "weight": s} for w, s in kws]  # tuple 解包
+                "keywords": [{"word": kw.word, "weight": kw.weight} for kw in kws]  # tuple 解包
             })
         else:
             print(f"\n【新闻】{text[:40]}...")
-            for w, s in kws:
-                print(f"{w}\t{s:.4f}")
+            for w in kws:
+                print(f"{w.word}\t{w.weight:.4f}")
 
     if args.json:
         print(json.dumps(all_results, ensure_ascii=False, indent=2))
