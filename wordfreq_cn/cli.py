@@ -1,7 +1,9 @@
 # wordfreq_cn/cli.py
 
 import argparse
+import json
 from collections import defaultdict
+
 from .core import (
     extract_keywords_tfidf,
     extract_keywords_textrank,
@@ -24,26 +26,63 @@ def load_news(args):
     raise ValueError("需要提供 --news 或 --input-file")
 
 
+def print_kw_list(title, kw_list, json_output=False):
+    if json_output:
+        data = [{"word": w, "weight": s} for w, s in kw_list]
+        print(json.dumps(data, ensure_ascii=False, indent=2))
+    else:
+        print(f"\n=== {title} ===")
+        for w, score in kw_list:
+            print(f"{w}\t{score:.4f}")
+
+
+# ============================================================
+# 子命令对应函数（只包装 core）
+# ============================================================
+
 def run_tfidf(args):
     news = load_news(args)
     stopwords = load_stopwords(args.stopwords)
-    result = extract_keywords_tfidf(corpus=news, top_k=args.topk, stopwords=stopwords)
 
-    print("\n=== TF-IDF 关键词 ===")
-    for kw in result.keywords:
-        print(f"{kw.word}\t{kw.weight:.4f}")
+    result = extract_keywords_tfidf(
+        corpus=news,
+        top_k=args.topk,
+        stopwords=stopwords
+    )
+    # 输出 JSON 或文本
+    if args.json:
+        data = [{"word": kw.word, "weight": kw.weight} for kw in result.keywords]
+        print(json.dumps(data, ensure_ascii=False, indent=2))
+    else:
+        print("=== TF-IDF 关键词 ===")
+        for kw in result.keywords:
+            print(f"{kw.word}\t{kw.weight:.4f}")
 
 
 def run_textrank(args):
     news = load_news(args)
+    stopwords = load_stopwords(args.stopwords)
 
-    print("\n=== TextRank 关键词（逐条新闻） ===")
+    all_results = []
     for text in news:
-        kws = extract_keywords_textrank(text=text, top_k=args.topk, with_weight=True)
-        print(f"\n【新闻】{text[:40]}...")
-        for kw in kws:
-            # KeywordItem 对象
-            print(f"{kw.word}\t{kw.weight:.4f}")
+        kws = extract_keywords_textrank(
+            text=text,
+            top_k=args.topk,
+            with_weight=True,
+            stopwords=stopwords
+        )
+        if args.json:
+            all_results.append({
+                "news": text,
+                "keywords": [{"word": kw.word, "weight": kw.weight} for kw in kws]
+            })
+        else:
+            print(f"\n【新闻】{text[:40]}...")
+            for kw in kws:
+                print(f"{kw.word}\t{kw.weight:.4f}")
+
+    if args.json:
+        print(json.dumps(all_results, ensure_ascii=False, indent=2))
 
 
 def run_wordfreq(args):
@@ -51,9 +90,12 @@ def run_wordfreq(args):
     stopwords = load_stopwords(args.stopwords)
     counter = count_word_frequency(news, stopwords)
 
-    print("\n=== 词频统计 ===")
-    for w, c in counter.most_common(args.topk):
-        print(f"{w}\t{c}")
+    if args.json:
+        print(json.dumps(counter, ensure_ascii=False, indent=2))
+    else:
+        print("\n=== 词频统计 ===")
+        for w, c in counter.most_common(args.topk):
+            print(f"{w}\t{c}")
 
 
 def run_wordcloud(args):
@@ -86,7 +128,7 @@ def main():
         p.add_argument("--input-file", type=str, help="从文件加载新闻")
         p.add_argument("--stopwords", type=str, help="自定义停用词")
         p.add_argument("--topk", type=int, default=20, help="关键词数量")
-        p.add_argument("--font-path", type=str, help="生成词云时使用的字体路径")
+        p.add_argument("--json", action="store_true", help="输出 JSON 格式")
 
     # TF-IDF
     p1 = subparsers.add_parser("tfidf", help="使用 TF-IDF 提取关键词")
