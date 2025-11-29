@@ -51,12 +51,12 @@ def run_tfidf(args):
     )
     # 输出 JSON 或文本
     if args.json:
-        data = [{"word": w, "weight": s} for w, s in result]  # <-- 解包 tuple
+        data = [{"word": keyword_item.word, "weight": keyword_item.weight} for keyword_item in result.keywords]
         print(json.dumps(data, ensure_ascii=False, indent=2))
     else:
         print("=== TF-IDF 关键词 ===")
-        for w, s in result:  # <-- 解包 tuple
-            print(f"{w}\t{s:.4f}")
+        for keyword_item in result.keywords:  #
+            print(f"{keyword_item.word}\t{keyword_item.weight:.4f}")
 
 
 def run_textrank(args):
