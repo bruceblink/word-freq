@@ -59,7 +59,7 @@ class KeywordItem:
 @dataclass
 class TfIdfResult:
     keywords: list[KeywordItem]
-    vectorizer: TfidfVectorizer
+    vectorizer: TfidfVectorizer | None
     matrix: Any  # sparse matrix returned by fit_transform
 
     def keywords_to_json(self, indent: int = 2, ensure_ascii: bool = False) -> str:
