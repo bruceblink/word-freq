@@ -1,4 +1,12 @@
-# [新闻词频分析与趋势词可视化](https://github.com/bruceblink/word-freq)
+# WordFreq-CN
+
+**中文新闻词频分析与趋势词可视化工具**
+
+[![PyPI](https://img.shields.io/pypi/v/wordfreq-cn.svg)](https://pypi.org/project/wordfreq-cn/)
+[![Python Version](https://img.shields.io/pypi/pyversions/wordfreq-cn.svg)](https://pypi.org/project/wordfreq-cn/)
+[GitHub](https://github.com/bruceblink/word-freq)
+
+---
 
 ## 功能
 
@@ -7,7 +15,8 @@
 * **词频统计**
 * 按 **时间窗口生成趋势词云**
 * 支持自定义停用词表，过滤中文虚词
-* 可直接通过命令行工具 `wordfreq-cn` 运行
+* 可通过命令行工具 `wordfreq-cn` 直接运行
+* 也可以通过`wordfreq-cn`API函数使用
 
 ---
 
@@ -17,84 +26,144 @@
 # 安装 Python 依赖
 pip install jieba scikit-learn wordcloud matplotlib numpy
 
-# 安装本地包（如果使用源代码）
+# 安装本地源码包（如果你有源码）
 pip install .
 
-# 在线安装
+# 或直接从 PyPI 安装
 pip install wordfreq-cn
 ```
+
 ---
 
-## 使用方法
-
-### 1. 命令行运行
+## 快速开始示例（命令行）
 
 ```bash
-  wordfreq-cn --news "人工智能技术在医疗领域的应用取得突破" "全球气候变化加剧" --topk 5
+wordfreq-cn tfidf --news "人工智能技术在医疗领域的应用取得突破" "全球气候变化加剧" --topk 5
+wordfreq-cn textrank --news "人工智能技术在医疗领域的应用取得突破" --topk 5
+wordfreq-cn freq --news "人工智能技术在医疗领域的应用取得突破" --topk 10
+wordfreq-cn wordcloud --news "人工智能技术在医疗领域的应用取得突破" "全球气候变化加剧"
 ```
 
-* `--news`：新闻标题或正文列表，可传多个
-* `--topk`：输出前 N 个关键词（默认 10）
-* 会在 `wordclouds/` 生成每条新闻或按日期聚合的趋势词云图片
+### 示例输出
 
-示例输出：
+**TF-IDF 高频词：**
 
 ```
-=== TF-IDF 高权重词 ===
 人工智能技术 1.0000
 医疗 0.8349
 应用 0.6730
 ...
+```
 
-=== TextRank 关键词 ===
-标题: 人工智能技术在医疗领域的应用取得突破
+**TextRank 关键词：**
+
+```
+TextRank [2025-11-25]:
   领域 (1.0000)
   医疗 (0.8349)
   取得 (0.6746)
   应用 (0.6730)
   突破 (0.5175)
+```
 
-=== 词频统计 ===
+**词频统计：**
+
+```
 技术 2
 人工智能 1
 医疗 1
 ...
 ```
 
+**词云输出目录：**
+
+```
+wordclouds/wordcloud_day1.png
+wordclouds/wordcloud_day2.png
+```
+
 ---
 
-### 2. Python 调用
+## Python API 使用示例
 
 ```python
-from wordfreq_cn import tfidf_keywords, textrank_keywords, count_words, generate_trend_wordcloud, load_stopwords
+from collections import defaultdict
+from wordfreq_cn import (
+    extract_keywords,
+    count_word_frequency,
+    generate_trend_wordcloud,
+    load_stopwords
+)
 
+# 示例新闻数据
 news_list = [
     ("2025-11-25", "人工智能技术在医疗领域的应用取得突破"),
     ("2025-11-25", "全球气候变化加剧，联合国发布最新报告")
 ]
 
-stopwords = load_stopwords(custom_file="stopwords.txt")
+# 加载自定义停用词
+stopwords = load_stopwords("stopwords.txt")
 
-# TF-IDF
-tfidf_res = tfidf_keywords([text for _, text in news_list], top_k=5, stopwords=stopwords)
-print(tfidf_res)
+# ---------------------------
+# TF-IDF 关键词提取
+# ---------------------------
+texts = [text for _, text in news_list]
+tfidf_res = extract_keywords(texts, method="tfidf", top_k=5, stopwords=stopwords)
+print("TF-IDF:", tfidf_res)
 
+# ---------------------------
+# TextRank 关键词提取
+# ---------------------------
+for date, text in news_list:
+    kws = extract_keywords(text, method="textrank", top_k=5, stopwords=stopwords)
+    print(f"TextRank [{date}]:", kws)
+
+# ---------------------------
 # 词频统计
-counter = count_words([text for _, text in news_list], stopwords=stopwords)
-print(counter)
+# ---------------------------
+counter = count_word_frequency(texts, stopwords=stopwords)
+print("词频统计:", counter)
 
-# 按日期生成词云
-from collections import defaultdict
-
+# ---------------------------
+# 按日期生成趋势词云
+# ---------------------------
 news_by_date = defaultdict(list)
 for date, text in news_list:
     news_by_date[date].append(text)
-generate_trend_wordcloud(news_by_date, stopwords=stopwords)
-```
-词云示例
 
-![2015-11-25](wordclouds/wordcloud_2025-11-25.png)
-![2015-11-26](wordclouds/wordcloud_2025-11-26.png)
+generate_trend_wordcloud(news_by_date, stopwords=stopwords)
+# 词云图片默认保存到 wordclouds/ 目录
+```
+
+---
+
+## 快速流程图示
+
+```
+┌─────────────┐
+│  输入新闻列表  │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│ TF-IDF / TextRank │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│  输出关键词   │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│  词频统计    │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│  生成词云图  │
+└─────────────┘
+```
 
 ---
 
@@ -117,22 +186,24 @@ pytest --cov=wordfreq_cn
 pytest --cov=wordfreq_cn --cov-report=html
 ```
 
+---
+
 ## 文件说明
 
-| 文件名                                               | 说明                     |
-|---------------------------------------------------|------------------------|
-| `wordfreq_cn/`                                    | Python 包目录，包含核心逻辑和 CLI |
-| `wordfreq_cn/data/stopwords.txt`                  | 可选自定义停用词文件             |
-| `wordfreq_cn/data/cn_stopwords.txt`               | 哈工大中文停用词表（脚本可自动加载）     |
-| `wordfreq_cn/data/fonts/SourceHanSansHWSC-VF.ttf` | 《思源黑体》中文字体文件，用于生成中文词云  |
-| `wordclouds/`                                     | 存放生成的词云图片              |
-| `tests/`                                          | 单元测试代码                 |
+| 文件名                                 | 说明                     |
+| ----------------------------------- | ---------------------- |
+| `wordfreq_cn/`                      | Python 包目录，包含核心逻辑和 CLI |
+| `wordfreq_cn/data/stopwords.txt`    | 可选自定义停用词文件             |
+| `wordfreq_cn/data/cn_stopwords.txt` | 哈工大中文停用词表     |
+| `wordfreq_cn/data/fonts/`           | 中文字体文件（如思源黑体）用于生成词云    |
+| `wordclouds/`                       | 默认存放生成的词云图片            |
+| `tests/`                            | 单元测试代码                 |
 
 ---
 
 ## 注意事项
 
-* 如果新闻量大，可在 `tfidf_keywords` 函数中调整 `max_features` 和 `top_k` 参数。
-* 建议停用词表包含常用虚词（如“的”“在”“是”）以获得更干净的词频统计结果。
-* 安装后，可以直接使用 `wordfreq-cn` 命令，无需运行 `python main.py`或者`python wordfreq_cn/cli.py` 之类的命令使用。
+* 新闻量大时，可调整 `extract_keywords` 的 `top_k` 或 TF-IDF 的 `max_features` 参数
+* 停用词表建议包含常用虚词（如“的”“在”“是”）以获得更干净的词频统计结果
+* 安装后直接使用 `wordfreq-cn` 命令，无需手动运行 `python cli.py`
 
