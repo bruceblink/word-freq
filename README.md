@@ -15,7 +15,7 @@
 
 ```bash
 # 安装 Python 依赖
-pip install jieba scikit-learn wordcloud matplotlib
+pip install jieba scikit-learn wordcloud matplotlib numpy
 
 # 安装本地包（如果使用源代码）
 pip install .
