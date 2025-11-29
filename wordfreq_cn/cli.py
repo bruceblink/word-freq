@@ -24,26 +24,14 @@ def load_news(args):
     raise ValueError("需要提供 --news 或 --input-file")
 
 
-def print_kw_list(title, kw_list):
-    print(f"\n=== {title} ===")
-    for w, score in kw_list:
-        print(f"{w}\t{score:.4f}")
-
-
-# ============================================================
-# 子命令对应函数（只包装 core）
-# ============================================================
-
 def run_tfidf(args):
     news = load_news(args)
     stopwords = load_stopwords(args.stopwords)
+    result = extract_keywords_tfidf(corpus=news, top_k=args.topk, stopwords=stopwords)
 
-    result = extract_keywords_tfidf(
-        corpus=news,
-        top_k=args.topk,
-        stopwords=stopwords
-    )
-    print("TF-IDF 关键词", result.keywords)
+    print("\n=== TF-IDF 关键词 ===")
+    for kw in result.keywords:
+        print(f"{kw.word}\t{kw.weight:.4f}")
 
 
 def run_textrank(args):
@@ -51,14 +39,11 @@ def run_textrank(args):
 
     print("\n=== TextRank 关键词（逐条新闻） ===")
     for text in news:
-        kws = extract_keywords_textrank(
-            text=text,
-            top_k=args.topk,
-            with_weight=True
-        )
+        kws = extract_keywords_textrank(text=text, top_k=args.topk, with_weight=True)
         print(f"\n【新闻】{text[:40]}...")
-        for w, s in kws:
-            print(f"{w}\t{s:.4f}")
+        for kw in kws:
+            # KeywordItem 对象
+            print(f"{kw.word}\t{kw.weight:.4f}")
 
 
 def run_wordfreq(args):
@@ -80,7 +65,7 @@ def run_wordcloud(args):
         news_by_date[f"day{i+1}"].append(text)
 
     print("正在生成词云图...")
-    files = generate_trend_wordcloud(news_by_date, stopwords=stopwords)
+    files = generate_trend_wordcloud(news_by_date, stopwords=stopwords, font_path=getattr(args, "font_path", None))
 
     print("\n生成的文件：")
     for f in files:
@@ -101,6 +86,7 @@ def main():
         p.add_argument("--input-file", type=str, help="从文件加载新闻")
         p.add_argument("--stopwords", type=str, help="自定义停用词")
         p.add_argument("--topk", type=int, default=20, help="关键词数量")
+        p.add_argument("--font-path", type=str, help="生成词云时使用的字体路径")
 
     # TF-IDF
     p1 = subparsers.add_parser("tfidf", help="使用 TF-IDF 提取关键词")
