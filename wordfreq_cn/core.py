@@ -362,22 +362,25 @@ def extract_keywords_textrank(
     if not text:
         return []
 
-    cleaned = clean_text(text)
-    # 先直接调用 textrank（它内部有分词），但我们会过滤结果
+    # 1. 统一预处理（清洗 + 缩写展开 + 分词 + 停词 + 词长过滤）
+    tokens = preprocess_text(text, stopwords=stopwords, min_len=min_len)
+
+    # 2. 将 tokens 拼成字符串传给 TextRank
+    cleaned_text = " ".join(tokens)
+
+    # 3. 调用 jieba TextRank
     try:
-        # jieba.analyse.textrank 支持 allowPOS 参数
         candidates = jieba.analyse.textrank(
-            cleaned, topK=top_k * 3, withWeight=True, allowPOS=allow_pos
+            cleaned_text, topK=top_k * 3, withWeight=True, allowPOS=allow_pos
         )
     except TypeError:
-        # 兼容旧版本 jieba 不支持 allowPOS 的情况
-        candidates = jieba.analyse.textrank(cleaned, topK=top_k * 3, withWeight=True)
+        candidates = jieba.analyse.textrank(cleaned_text, topK=top_k * 3, withWeight=True)
 
+    # 4. 结果过滤 + 包装
     results: list[str | KeywordItem] = []
-    sw = set(w.lower() for w in stopwords) if stopwords else set()
     for word, weight in candidates:
         w = word.strip()
-        if not w or len(w) < min_len or w.lower() in sw:
+        if not w or len(w) < min_len:
             continue
         if with_weight:
             results.append(KeywordItem(word=w, weight=float(weight), count=None))
