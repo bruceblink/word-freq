@@ -84,24 +84,32 @@ jobs:
         run: |
           twine check dist/*
 
-      # 7. 发布到 PyPI
+      # 7. 生成 Release Notes
+      - name: Generate Release Notes
+        id: draft_notes
+        uses: release-drafter/release-drafter@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 8. 发布到 PyPI
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.12.3
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
 
-      # 8. 创建 GitHub Release
+      # 9. 创建 GitHub Release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
+          body: ${{ steps.draft_notes.outputs.body }}   # ← 注入 release-drafter 生成的内容
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 9. 上传 dist 文件到 Release
+      # 10. 上传 dist 文件到 Release
       - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
