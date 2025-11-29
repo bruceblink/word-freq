@@ -20,7 +20,7 @@ from collections import Counter
 from dataclasses import dataclass
 from functools import lru_cache
 from importlib.resources import files
-from typing import List, Any
+from typing import Any
 
 import jieba
 import jieba.analyse
@@ -266,25 +266,16 @@ def extract_keywords_tfidf_per_doc(
     X = vectorizer.fit_transform(corpus)
     feature_names = vectorizer.get_feature_names_out()
 
-    results: List[List[KeywordItem]] = []
+    results: list[list[KeywordItem]] = []
     # 对每一行（文档）寻找 top_k 非零特征
     for doc_idx in range(X.shape[0]):
         row = X[doc_idx]  # sparse row
         if row.nnz == 0:
             results.append([])
             continue
-        # 获取非零索引和对应值
-        indices = row.indices
-        data = row.data
         # 排序取 top_k
-        idx_sorted = np.argsort(data)[::-1]
-        top_indices = idx_sorted[:top_k]
-        doc_keywords: List[KeywordItem] = []
-        for idx in top_indices:
-            feat_pos = indices[idx]
-            word = feature_names[feat_pos]
-            weight = float(data[idx])
-            doc_keywords.append(KeywordItem(word=word, weight=weight, count=None))
+        idx_sorted = np.argsort(row.data)[::-1][:top_k]
+        doc_keywords = [KeywordItem(word=feature_names[row.indices[i]], weight=float(row.data[i])) for i in idx_sorted]
         results.append(doc_keywords)
 
     return results
