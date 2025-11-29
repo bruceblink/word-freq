@@ -99,7 +99,7 @@ class TestLoadStopwords:
     def test_load_default_stopwords(self):
         """测试加载默认停用词"""
         stopwords = load_stopwords()
-        assert isinstance(stopwords, list)
+        assert isinstance(stopwords, set)
         assert len(stopwords) > 0
         assert "的" in stopwords
         assert "了" in stopwords
@@ -107,7 +107,7 @@ class TestLoadStopwords:
     def test_load_custom_stopwords(self, stopwords_file):
         """测试加载自定义停用词"""
         stopwords = load_stopwords(custom_file=stopwords_file)
-        assert isinstance(stopwords, list)
+        assert isinstance(stopwords, set)
         assert "的" in stopwords
         assert "了" in stopwords
         assert "是" in stopwords
@@ -115,7 +115,7 @@ class TestLoadStopwords:
     def test_load_nonexistent_file(self):
         """测试加载不存在的文件"""
         stopwords = load_stopwords(custom_file="nonexistent.txt")
-        assert isinstance(stopwords, list)
+        assert isinstance(stopwords, set)
         assert len(stopwords) > 0
 
 class TestGenerateTrendWordcloud:
@@ -124,7 +124,7 @@ class TestGenerateTrendWordcloud:
         with tempfile.TemporaryDirectory() as temp_dir:
             files = generate_trend_wordcloud(
                 mock_news_by_date,
-                stopwords=list(),
+                stopwords=set(),
                 output_dir=temp_dir
             )
 
@@ -140,7 +140,7 @@ class TestGenerateTrendWordcloud:
 
         files = generate_trend_wordcloud(
             mock_news_by_date,
-            stopwords=list(),
+            stopwords=set(),
             output_dir=str(custom_dir)
         )
 
