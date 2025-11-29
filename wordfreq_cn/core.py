@@ -77,6 +77,9 @@ def load_stopwords(custom_file: str | None = None, hit_file: str | None = None) 
     stopwords = set()
 
     def _load_from_path(path: str):
+        if not path or not os.path.exists(path):
+            logger.debug("Stopwords file not found: %s", path)
+            return
         try:
             with open(path, "r", encoding="utf-8") as f:
                 for raw in f:
@@ -84,8 +87,8 @@ def load_stopwords(custom_file: str | None = None, hit_file: str | None = None) 
                     if not line or line.startswith("#"):
                         continue
                     stopwords.add(line.lower())
-        except FileNotFoundError:
-            logger.debug("Stopwords file not found: %s", path)
+        except Exception as e0:
+            logger.warning("Failed to load stopwords from %s: %s", path, e0)
 
     if hit_file:
         _load_from_path(hit_file)
