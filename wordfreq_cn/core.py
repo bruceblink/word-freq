@@ -381,12 +381,8 @@ def _get_default_font_path() -> str:
         fonts_pkg = files('wordfreq_cn.data.fonts')
         for name in DEFAULT_FONT_CANDIDATES:
             candidate = fonts_pkg / name
-            try:
-                if candidate.exists():
-                    return str(candidate)
-            except Exception as e:
-                logger.debug(f"package fonts not exist: {e}")
-                continue
+            if candidate.exists():
+                return str(candidate)
     except Exception as e:
         logger.debug(f"package fonts not available: {e}")
 
