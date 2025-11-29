@@ -51,8 +51,7 @@ def run_tfidf(args):
     )
     # 输出 JSON 或文本
     if args.json:
-        data = [{"word": keyword_item.word, "weight": keyword_item.weight} for keyword_item in result.keywords]
-        print(json.dumps(data, ensure_ascii=False, indent=2))
+        print(result.keywords_to_json())
     else:
         print("=== TF-IDF 关键词 ===")
         for keyword_item in result.keywords:  #
