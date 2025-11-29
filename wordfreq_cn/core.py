@@ -147,18 +147,37 @@ def clean_text(text: str, remove_urls: bool = True, remove_emails: bool = True, 
     return s
 
 
-def preprocess_text(text: str, stopwords: list[str] | None = None, min_len: int = 2) -> list[str]:
+import contractions
+
+def preprocess_text(
+    text: str,
+    stopwords: list[str] | None = None,
+    min_len: int = 2
+) -> list[str]:
     """
-    预处理管道：clean_text -> 分词 -> 停用词 & 长度过滤
+    预处理管道：clean_text -> 扩展英文缩写 -> 分词 -> 停用词 & 长度过滤
     返回词列表（原始词形，不再小写中文）
     """
+
+    # 1. 清洗中文/英文/符号
     cleaned = clean_text(text)
+
+    # 2. 展开英文缩写（don't -> do not）
+    cleaned = contractions.fix(cleaned)
+
+    # 3. 分词（中文/英文混合）
     words = segment_text(cleaned)
+
+    # 4. 停词过滤 + 词长过滤
     if stopwords:
         sw = set(w.lower() for w in stopwords)
-        words = [w for w in words if w and w.lower() not in sw and len(w) >= min_len]
+        words = [
+            w for w in words
+            if w and w.lower() not in sw and len(w) >= min_len
+        ]
     else:
         words = [w for w in words if w and len(w) >= min_len]
+
     return words
 
 

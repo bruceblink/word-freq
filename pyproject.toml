@@ -16,7 +16,8 @@ dependencies = [
     "scikit-learn>=1.7.2",
     "wordcloud>=1.9.4",
     "matplotlib>=3.10.7",
-    "numpy>=2.3.5"
+    "numpy>=2.3.5",
+    "contractions>=0.1.73"
 ]
 
 [project.scripts]
