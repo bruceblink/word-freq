@@ -296,11 +296,18 @@ def extract_keywords_tfidf_per_doc(
     """
     if not corpus:
         return []
+    # ----------------------------
+    # 文本预处理
+    # ----------------------------
+    processed_corpus = [
+        " ".join(preprocess_text(doc, stopwords=stopwords))
+        for doc in corpus
+    ]
 
     vectorizer = TfidfVectorizer(
         max_features=max_features,
         ngram_range=ngram_range,
-        stop_words=stopwords,
+        stop_words=None,
         token_pattern=token_pattern,
         lowercase=True,
         sublinear_tf=sublinear_tf,
@@ -308,7 +315,7 @@ def extract_keywords_tfidf_per_doc(
         max_df=max_df
     )
 
-    X = vectorizer.fit_transform(corpus)
+    X = vectorizer.fit_transform(processed_corpus)
     feature_names = vectorizer.get_feature_names_out()
 
     results: list[list[KeywordItem]] = []
