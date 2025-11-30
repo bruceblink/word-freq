@@ -7,7 +7,6 @@
 ## 功能
 
 * 中文新闻标题/正文的 **TF-IDF 高频词提取**
-* 基于 **TextRank** 的关键词提取
 * **词频统计**
 * 按 **时间窗口生成趋势词云**
 * 支持自定义停用词表，过滤中文虚词
@@ -20,7 +19,7 @@
 
 ```bash
 # 安装 Python 依赖
-pip install jieba scikit-learn wordcloud matplotlib numpy
+pip install jieba3 scikit-learn wordcloud matplotlib numpy
 
 # 安装本地源码包（如果你有源码）
 pip install .
@@ -35,7 +34,6 @@ pip install wordfreq-cn
 
 ```bash
 wordfreq-cn tfidf --news "人工智能技术在医疗领域的应用取得突破" "全球气候变化加剧" --topk 5
-wordfreq-cn textrank --news "人工智能技术在医疗领域的应用取得突破" --topk 5
 wordfreq-cn freq --news "人工智能技术在医疗领域的应用取得突破" --topk 10
 wordfreq-cn wordcloud --news "人工智能技术在医疗领域的应用取得突破" "全球气候变化加剧"
 wordfreq-cn freq --news "人工智能技术在医疗领域的应用取得突破" --json
@@ -50,17 +48,6 @@ wordfreq-cn freq --news "人工智能技术在医疗领域的应用取得突破"
 医疗 0.8349
 应用 0.6730
 ...
-```
-
-**TextRank 关键词：**
-
-```
-TextRank [2025-11-25]:
-  领域 (1.0000)
-  医疗 (0.8349)
-  取得 (0.6746)
-  应用 (0.6730)
-  突破 (0.5175)
 ```
 
 **词频统计：**
@@ -120,13 +107,6 @@ tfidf_res = extract_keywords(texts, method="tfidf", top_k=5, stopwords=stopwords
 print("TF-IDF:", tfidf_res)
 
 # ---------------------------
-# TextRank 关键词提取
-# ---------------------------
-for date, text in news_list:
-    kws = extract_keywords(text, method="textrank", top_k=5, stopwords=stopwords)
-    print(f"TextRank [{date}]:", kws)
-
-# ---------------------------
 # 词频统计
 # ---------------------------
 counter = count_word_frequency(texts, stopwords=stopwords)
@@ -148,29 +128,29 @@ generate_trend_wordcloud(news_by_date, stopwords=stopwords)
 ## 快速流程图示
 
 ```
-┌─────────────┐
-│  输入新闻列表  │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│ TF-IDF / TextRank │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  输出关键词   │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  词频统计    │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  生成词云图  │
-└─────────────┘
+                    ┌─────────────┐
+                    │ 输入新闻列表 │
+                    └──────┬──────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │    TF-IDF   │
+                    └──────┬──────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │  输出关键词  │
+                    └──────┬──────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │   词频统计   │
+                    └──────┬──────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │  生成词云图  │
+                    └─────────────┘
 ```
 
 ---
@@ -199,10 +179,10 @@ pytest --cov=wordfreq_cn --cov-report=html
 ## 文件说明
 
 | 文件名                                 | 说明                     |
-| ----------------------------------- | ---------------------- |
+|-------------------------------------|------------------------|
 | `wordfreq_cn/`                      | Python 包目录，包含核心逻辑和 CLI |
 | `wordfreq_cn/data/stopwords.txt`    | 可选自定义停用词文件             |
-| `wordfreq_cn/data/cn_stopwords.txt` | 哈工大中文停用词表     |
+| `wordfreq_cn/data/cn_stopwords.txt` | 哈工大中文停用词表              |
 | `wordfreq_cn/data/fonts/`           | 中文字体文件（如思源黑体）用于生成词云    |
 | `wordclouds/`                       | 默认存放生成的词云图片            |
 | `tests/`                            | 单元测试代码                 |
