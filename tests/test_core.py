@@ -7,7 +7,6 @@ from collections import Counter
 from wordfreq_cn.core import (
     TfIdfResult,
     extract_keywords_tfidf,
-    extract_keywords_textrank,
     count_word_frequency,
     load_stopwords,
     generate_trend_wordcloud
@@ -46,26 +45,6 @@ class TestTFIDFKeywords:
         result = extract_keywords_tfidf(["单一文档测试"], top_k=3)
         assert len(result.keywords) <= 3
 
-class TestTextRankKeywords:
-    def test_textrank_basic(self, sample_text):
-        """测试 TextRank 基础功能"""
-        result = extract_keywords_textrank(sample_text, top_k=5)
-
-        assert isinstance(result, list)
-        assert len(result) <= 5
-        for keyword_item in result:
-            assert isinstance(keyword_item.word, str)
-            assert isinstance(keyword_item.weight, float)
-
-    def test_textrank_empty_text(self):
-        """测试空文本"""
-        result = extract_keywords_textrank("", top_k=5)
-        assert result == []
-
-    def test_textrank_short_text(self):
-        """测试短文本"""
-        result = extract_keywords_textrank("人工智能", top_k=5)
-        assert len(result) <= 1
 
 class TestCountWords:
     def test_count_words_basic(self, sample_news):

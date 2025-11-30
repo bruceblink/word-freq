@@ -46,26 +46,6 @@ class TestCLI:
             assert "TF-IDF 关键词" in output
             assert "人工智能" in output
 
-    def test_cli_textrank(self):
-        """测试 TextRank 子命令"""
-        with patch('wordfreq_cn.cli.extract_keywords_textrank') as mock_textrank, \
-                patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            top_keywords = [KeywordItem("机器学习", 0.9), KeywordItem("深度", 0.7)]
-            mock_textrank.return_value = top_keywords
-
-            test_args = [
-                'wordfreq-cn', 'textrank',
-                '--news', '新闻A', '新闻B',
-                '--topk', '3'
-            ]
-
-            with patch('sys.argv', test_args):
-                main()
-                output = mock_stdout.getvalue()
-
-            assert "TextRank 关键词" in output
-            assert "机器学习" in output
-
     def test_cli_freq(self):
         """测试词频统计子命令"""
         with patch('wordfreq_cn.cli.load_stopwords') as mock_load_stopwords, \
@@ -116,7 +96,6 @@ class TestCLI:
         """测试带停用词文件的 CLI"""
         with patch('wordfreq_cn.cli.load_stopwords') as mock_load_stopwords, \
                 patch('wordfreq_cn.cli.extract_keywords_tfidf'), \
-                patch('wordfreq_cn.cli.extract_keywords_textrank'), \
                 patch('wordfreq_cn.cli.count_word_frequency'), \
                 patch('wordfreq_cn.cli.generate_trend_wordcloud'):
 
