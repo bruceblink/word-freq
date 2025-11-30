@@ -16,9 +16,11 @@ jobs:
         python-version: [ "3.12" ]  # 只测试 3.12，因为 requires-python = ">=3.12"
 
     steps:
-      # 1. 检出代码
+      # 1. 检出代码（加上 fetch-depth: 0 最佳实践）
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # 2. 设置 Python 环境
       - name: Set up Python ${{ matrix.python-version }}
@@ -32,7 +34,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[test]"
 
-      # 4. 运行测试并生成覆盖率报告
+      # 4. 运行测试并生成覆盖率
       - name: Run tests with pytest
         run: |
           pytest tests/ -v --cov=wordfreq_cn --cov-report=xml --cov-report=html
@@ -54,9 +56,11 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')  # 只有tag时发布
 
     steps:
-      # 1. 检出代码
+      # 1. 检出代码，必须 fetch 全部历史给 changelogithub 使用
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # 2. 设置 Python 环境
       - name: Set up Python
@@ -74,7 +78,7 @@ jobs:
         run: |
           rm -rf dist build *.egg-info
 
-      # 5. 构建包
+      # 5. 构建 sdist 和 wheel
       - name: Build package
         run: |
           python -m build --sdist --wheel
@@ -84,18 +88,27 @@ jobs:
         run: |
           twine check dist/*
 
-      # 7. 设置 Node.js 并生成 changelog 和 release
-      - uses: actions/setup-node@v4
+      # 7. 设置 Node.js（用于 changelogithub 生成 changelog）
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: lts/*
 
-      # 8. 生成 changelog 并创建 release（同时上传文件）
+      # 8. 生成 changelog，并创建 GitHub Release
       - name: Generate Changelog and Create Release
-        run: npx changelogithub --attach dist/*
+        run: npx changelogithub
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 9. 发布到 PyPI
+      # 9. 上传打包产物到刚刚创建的 Release
+      - name: Upload artifacts to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 10. 发布到 PyPI
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.12.3
         with:
