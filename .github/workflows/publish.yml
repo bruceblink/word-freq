@@ -57,8 +57,6 @@ jobs:
       # 1. 检出代码
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # 保证 changelogithub 拿到完整 commit 历史
 
       # 2. 设置 Python 环境
       - name: Set up Python
@@ -86,14 +84,14 @@ jobs:
         run: |
           twine check dist/*
 
-      # 7. 设置 Node.js
+      # 7. 设置 Node.js 并生成 changelog 和 release
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
 
-      # 8. 生成 changelog
-      - name: Generate Changelog with changelogithub
-        run: npx changelogithub
+      # 8. 生成 changelog 并创建 release（同时上传文件）
+      - name: Generate Changelog and Create Release
+        run: npx changelogithub --attach dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -103,15 +101,3 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-
-      # 10. 创建 GitHub Release
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          body_path: CHANGELOG.md
-          draft: false
-          files: "dist/*"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
