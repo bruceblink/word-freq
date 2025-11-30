@@ -1,14 +1,13 @@
 """
 wordfreq_cn.core
 ----------------
-优化后的关键词提取与词云工具集合，基于 jieba + sklearn + wordcloud。
+优化后的关键词提取与词云工具集合，基于 jieba3 + sklearn + wordcloud。
 
 主要功能：
 - 停用词加载 (load_stopwords)
 - 文本清洗 (clean_text) 与预处理 (preprocess_text)
 - 分词（缓存）(segment_text)
 - 全局 / per-doc TF-IDF 关键词提取 (extract_keywords_tfidf, extract_keywords_tfidf_per_doc)
-- TextRank 关键词提取 (extract_keywords_textrank)
 - 词频统计 (count_word_frequency)
 - 词云生成 (generate_wordcloud, generate_trend_wordcloud)
 """
