@@ -58,36 +58,6 @@ def run_tfidf(args):
             print(f"{keyword_item.word}\t{keyword_item.weight:.4f}")
 
 
-def run_textrank(args):
-    news = load_news(args)
-    stopwords = load_stopwords(args.stopwords)
-
-    all_results = []
-    if not args.json:
-        print("\n=== TextRank 关键词 ===")  #
-
-    for text in news:
-        kws = extract_keywords_textrank(
-            text=text,
-            top_k=args.topk,
-            with_weight=True,
-            stopwords=stopwords
-        )
-
-        if args.json:
-            all_results.append({
-                "news": text,
-                "keywords": [{"word": kw.word, "weight": kw.weight} for kw in kws]  # tuple 解包
-            })
-        else:
-            print(f"\n【新闻】{text[:40]}...")
-            for w in kws:
-                print(f"{w.word}\t{w.weight:.4f}")
-
-    if args.json:
-        print(json.dumps(all_results, ensure_ascii=False, indent=2))
-
-
 def run_wordfreq(args):
     news = load_news(args)
     stopwords = load_stopwords(args.stopwords)
@@ -137,11 +107,6 @@ def main():
     p1 = subparsers.add_parser("tfidf", help="使用 TF-IDF 提取关键词")
     add_common(p1)
     p1.set_defaults(func=run_tfidf)
-
-    # TextRank
-    p2 = subparsers.add_parser("textrank", help="使用 TextRank 提取关键词")
-    add_common(p2)
-    p2.set_defaults(func=run_textrank)
 
     # Word Frequency
     p3 = subparsers.add_parser("freq", help="统计词频")

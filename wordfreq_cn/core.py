@@ -22,8 +22,7 @@ from functools import lru_cache
 from importlib.resources import files
 from typing import Any
 
-import jieba
-import jieba.analyse
+import jieba3
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from wordcloud import WordCloud
@@ -44,6 +43,7 @@ DEFAULT_FONT_CANDIDATES = [
     "msyh.ttc"  # Windows fallback
 ]
 
+jieba3_tokenizer = jieba3.jieba3()
 
 # ---------------------------
 # Helper dataclasses
@@ -181,7 +181,7 @@ def preprocess_text(
 
 
 # ---------------------------
-# Segment (jieba) with caching
+# Segment (jieba3) with caching
 # ---------------------------
 
 @lru_cache(maxsize=65536)
@@ -189,7 +189,7 @@ def _cached_cut(text: str) -> tuple[str, ...]:
     """
     内部缓存分词结果（不可变 tuple），减少重复分词成本。
     """
-    return tuple(jieba.cut(text))
+    return tuple(jieba3_tokenizer.cut_text(text))
 
 
 def segment_text(text: str) -> list[str]:
@@ -329,65 +329,6 @@ def extract_keywords_tfidf_per_doc(
         idx_sorted = np.argsort(row.data)[::-1][:top_k]
         doc_keywords = [KeywordItem(word=feature_names[row.indices[i]], weight=float(row.data[i])) for i in idx_sorted]
         results.append(doc_keywords)
-
-    return results
-
-
-# ---------------------------
-# TextRank 关键词（增强：预处理 + stopwords + POS 过滤）
-# ---------------------------
-
-def extract_keywords_textrank(
-        text: str,
-        top_k: int = 20,
-        with_weight: bool = True,
-        stopwords: set[str] | None = None,
-        min_len: int = 2,
-        allow_pos: tuple[str, ...] = ("ns", "n", "vn", "v")
-) -> list[str | KeywordItem]:
-    """
-    使用 TextRank 提取单文档关键词，内部做清洗与 stopwords 过滤。
-
-    参数:
-        text: 原始文本
-        top_k: 返回数量
-        with_weight: 是否返回权重
-        stopwords: 停用词列表
-        min_len: 词最小长度
-        allow_pos: 允许的词性（jieba 的 POS tag）
-
-    返回:
-        若 with_weight=True, 返回 List[KeywordItem]; 否则返回 List[str]
-    """
-    if not text:
-        return []
-
-    # 1. 统一预处理（清洗 + 缩写展开 + 分词 + 停词 + 词长过滤）
-    tokens = preprocess_text(text, stopwords=stopwords, min_len=min_len)
-
-    # 2. 将 tokens 拼成字符串传给 TextRank
-    cleaned_text = " ".join(tokens)
-
-    # 3. 调用 jieba TextRank
-    try:
-        candidates = jieba.analyse.textrank(
-            cleaned_text, topK=top_k * 3, withWeight=True, allowPOS=allow_pos
-        )
-    except TypeError:
-        candidates = jieba.analyse.textrank(cleaned_text, topK=top_k * 3, withWeight=True)
-
-    # 4. 结果过滤 + 包装
-    results: list[str | KeywordItem] = []
-    for word, weight in candidates:
-        w = word.strip()
-        if not w or len(w) < min_len:
-            continue
-        if with_weight:
-            results.append(KeywordItem(word=w, weight=float(weight), count=None))
-        else:
-            results.append(w)
-        if len(results) >= top_k:
-            break
 
     return results
 
@@ -545,11 +486,7 @@ def extract_keywords(
     kwargs 会传递给对应的子函数（例如 ngram_range, min_df 等）
     """
     method = method.lower()
-    if method == "textrank":
-        if not isinstance(data, str):
-            raise TypeError("textrank requires a single text string as input")
-        return extract_keywords_textrank(data, top_k=top_k, stopwords=stopwords, **kwargs)
-    elif method == "tfidf":
+    if method == "tfidf":
         if not isinstance(data, list):
             raise TypeError("tfidf requires corpus list[str] as input")
         res = extract_keywords_tfidf(data, top_k=top_k, stopwords=stopwords, **kwargs)
