@@ -6,7 +6,6 @@ from collections import defaultdict
 
 from .core import (
     extract_keywords_tfidf,
-    extract_keywords_textrank,
     count_word_frequency,
     generate_trend_wordcloud,
     load_stopwords
