@@ -21,19 +21,9 @@ def load_news(args):
     if args.news:
         return args.news
     if args.input_file:
-        with open(args.input_file, "r", encoding="utf-8") as f:
+        with open(args.input_file, encoding="utf-8") as f:
             return [line.strip() for line in f if line.strip()]
     raise ValueError("需要提供 --news 或 --input-file")
-
-
-def print_kw_list(title, kw_list, json_output=False):
-    if json_output:
-        data = [{"word": w, "weight": s} for w, s in kw_list]
-        print(json.dumps(data, ensure_ascii=False, indent=2))
-    else:
-        print(f"\n=== {title} ===")
-        for w, score in kw_list:
-            print(f"{w}\t{score:.4f}")
 
 
 # ============================================================
