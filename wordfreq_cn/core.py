@@ -423,7 +423,7 @@ def generate_trend_wordcloud(
         stopwords: set[str] | None = None,
         min_len: int = 2,
         ngram_range: tuple[int, int] = (1, 1),
-        output_dir: str = "wordclouds",
+        output_dir: str | None = None,
         font_path: str | None = None,
         width: int = 900,
         height: int = 600,
@@ -435,15 +435,22 @@ def generate_trend_wordcloud(
     news_by_date: {"2025-01-01": [text1, text2, ...], ...}
     返回生成的文件路径列表（按输入 dict 的 key 顺序）
     """
-    os.makedirs(output_dir, exist_ok=True)
+    from datetime import datetime
+    import uuid
+    current_date = datetime.now()  # 当前日期和时间
     font_path = font_path or _get_default_font_path()
     file_list: list[str] = []
     for date_str, texts in sorted(news_by_date.items()):
         if not texts:
             continue
+        # 如果date_str不存在则直接获取当前日期
+        date_str = date_str or current_date.strftime('%Y-%m-%d')
+        # 每个日期创建一个文件夹
+        output_dir_final = f"{output_dir}{date_str}" if output_dir else f"wordclouds/{date_str}"
+        os.makedirs(output_dir_final, exist_ok=True)
         counter = count_word_frequency(texts, stopwords=stopwords, min_len=min_len, ngram_range=ngram_range)
         if counter:
-            out_file = os.path.join(output_dir, f"wordcloud_{date_str}.png")
+            out_file = os.path.join(output_dir_final, f"wordcloud_{uuid.uuid4().hex}.png")
             _generate_wordcloud(counter,
                                 out_file,
                                 font_path=font_path,
