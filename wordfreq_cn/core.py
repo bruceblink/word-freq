@@ -90,7 +90,7 @@ def load_stopwords(custom_file: str | None = None, hit_file: str | None = None) 
             logger.debug("Stopwords file not found: %s", path)
             return
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 for raw in f:
                     line = raw.strip()
                     if not line or line.startswith("#"):
@@ -245,16 +245,8 @@ def extract_keywords_tfidf(
     if n_docs == 1:
         adjusted_max_df = 1.0
 
-    vectorizer = TfidfVectorizer(
-        max_features=max_features,
-        ngram_range=ngram_range,
-        stop_words=None,  # 已经在 preprocess_text 里去停词
-        token_pattern=token_pattern,
-        lowercase=True,
-        sublinear_tf=sublinear_tf,
-        min_df=min_df,
-        max_df=adjusted_max_df
-    )
+    vectorizer = TfidfVectorizer(max_features=max_features, ngram_range=ngram_range, token_pattern=token_pattern,
+                                 sublinear_tf=sublinear_tf, min_df=min_df, max_df=adjusted_max_df)
 
     X = vectorizer.fit_transform(processed_corpus)  # shape: (n_docs, n_features)
     feature_names = vectorizer.get_feature_names_out()
@@ -305,16 +297,8 @@ def extract_keywords_tfidf_per_doc(
         for doc in corpus
     ]
 
-    vectorizer = TfidfVectorizer(
-        max_features=max_features,
-        ngram_range=ngram_range,
-        stop_words=None,
-        token_pattern=token_pattern,
-        lowercase=True,
-        sublinear_tf=sublinear_tf,
-        min_df=min_df,
-        max_df=max_df
-    )
+    vectorizer = TfidfVectorizer(max_features=max_features, ngram_range=ngram_range, token_pattern=token_pattern,
+                                 sublinear_tf=sublinear_tf, min_df=min_df, max_df=max_df)
 
     X = vectorizer.fit_transform(processed_corpus)
     feature_names = vectorizer.get_feature_names_out()
@@ -396,7 +380,7 @@ def _get_default_font_path() -> str:
     raise RuntimeError("No suitable font found for WordCloud. Please provide font_path.")
 
 
-def generate_wordcloud(
+def _generate_wordcloud(
         frequencies: Counter,
         output_path: str,
         font_path: str | None = None,
@@ -404,6 +388,7 @@ def generate_wordcloud(
         height: int = 600,
         background_color: str = "white",
         colormap: str | None = None,
+        max_words: int | None = 100,
         mask: Any | None = None
 ) -> str:
     """
@@ -421,6 +406,7 @@ def generate_wordcloud(
         width=width,
         height=height,
         background_color=background_color,
+        max_words = max_words,
         mask=mask,
     )
     if colormap:
@@ -441,6 +427,7 @@ def generate_trend_wordcloud(
         font_path: str | None = None,
         width: int = 900,
         height: int = 600,
+        max_words: int | None = 100,
         background_color: str = "white"
 ) -> list[str]:
     """
@@ -457,12 +444,13 @@ def generate_trend_wordcloud(
         counter = count_word_frequency(texts, stopwords=stopwords, min_len=min_len, ngram_range=ngram_range)
         if counter:
             out_file = os.path.join(output_dir, f"wordcloud_{date_str}.png")
-            generate_wordcloud(counter,
-                               out_file,
-                               font_path=font_path,
-                               width=width,
-                               height=height,
-                               background_color=background_color)
+            _generate_wordcloud(counter,
+                                out_file,
+                                font_path=font_path,
+                                width=width,
+                                height=height,
+                                max_words = max_words,
+                                background_color=background_color)
             file_list.append(out_file)
     return file_list
 
