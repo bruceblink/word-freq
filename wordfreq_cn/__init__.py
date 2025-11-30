@@ -12,6 +12,8 @@ wordfreq_cn
 - cli.py: 命令行接口
 """
 
+# CLI 主入口
+from .cli import main as cli_main
 # 暴露核心函数和类
 from .core import (
     extract_keywords,
@@ -27,9 +29,6 @@ from .core import (
     preprocess_text,
     segment_text
 )
-
-# CLI 主入口
-from .cli import main as cli_main
 
 __all__ = [
     "extract_keywords",

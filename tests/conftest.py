@@ -7,6 +7,7 @@ import pytest
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+
 @pytest.fixture
 def sample_news():
     return [
@@ -16,9 +17,11 @@ def sample_news():
         "大数据与人工智能结合"
     ]
 
+
 @pytest.fixture
 def sample_text():
     return "自然语言处理是人工智能的重要分支，深度学习推动了自然语言处理的发展"
+
 
 @pytest.fixture
 def stopwords_file(tmp_path):
@@ -26,6 +29,7 @@ def stopwords_file(tmp_path):
     stopwords_file = tmp_path / "cn_stopwords.txt"
     stopwords_file.write_text(stopwords_content, encoding='utf-8')
     return str(stopwords_file)
+
 
 @pytest.fixture
 def mock_news_by_date():

@@ -28,7 +28,6 @@ class TestCLI:
         with patch('wordfreq_cn.cli.load_stopwords') as mock_load_stopwords, \
                 patch('wordfreq_cn.cli.extract_keywords_tfidf') as mock_extract_tfidf, \
                 patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-
             mock_load_stopwords.return_value = {"的", "了", "是"}
             top_keywords = [KeywordItem("人工智能", 0.8), KeywordItem("技术", 0.6)]
             mock_extract_tfidf.return_value = TfIdfResult(keywords=top_keywords, vectorizer=None, matrix=None)
@@ -51,7 +50,6 @@ class TestCLI:
         with patch('wordfreq_cn.cli.load_stopwords') as mock_load_stopwords, \
                 patch('wordfreq_cn.cli.count_word_frequency') as mock_count_words, \
                 patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-
             mock_load_stopwords.return_value = {"的", "了"}
             mock_counter = MagicMock()
             mock_counter.most_common.return_value = [("人工智能", 5), ("技术", 3)]
@@ -75,7 +73,6 @@ class TestCLI:
         with patch('wordfreq_cn.cli.load_stopwords') as mock_load_stopwords, \
                 patch('wordfreq_cn.cli.generate_trend_wordcloud') as mock_gen_wc, \
                 patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-
             mock_load_stopwords.return_value = {"的", "了"}
             mock_gen_wc.return_value = ["wordcloud_day1.png"]
 
@@ -98,7 +95,6 @@ class TestCLI:
                 patch('wordfreq_cn.cli.extract_keywords_tfidf'), \
                 patch('wordfreq_cn.cli.count_word_frequency'), \
                 patch('wordfreq_cn.cli.generate_trend_wordcloud'):
-
             mock_load_stopwords.return_value = {"的", "了"}
 
             test_args = [
@@ -117,7 +113,6 @@ class TestCLI:
         with patch('wordfreq_cn.cli.load_stopwords') as mock_load_stopwords, \
                 patch('wordfreq_cn.cli.extract_keywords_tfidf') as mock_extract_tfidf, \
                 patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-
             mock_load_stopwords.return_value = {"的", "了"}
             top_keywords = [KeywordItem("人工智能", 0.8), KeywordItem("技术", 0.6)]
             mock_extract_tfidf.return_value = TfIdfResult(keywords=top_keywords, vectorizer=None, matrix=None)

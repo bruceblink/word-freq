@@ -23,7 +23,7 @@ class TestTFIDFKeywords:
         for key_item in result.keywords:
             assert isinstance(key_item.word, str)
             assert isinstance(key_item.weight, float)
-            assert isinstance(key_item.count, int|None)
+            assert isinstance(key_item.count, int | None)
             assert key_item.weight > 0
 
     def test_tfidf_with_stopwords(self, sample_news, stopwords_file):
@@ -74,6 +74,7 @@ class TestCountWords:
         counter = count_word_frequency([])
         assert len(counter) == 0
 
+
 class TestLoadStopwords:
     def test_load_default_stopwords(self):
         """测试加载默认停用词"""
@@ -96,6 +97,7 @@ class TestLoadStopwords:
         stopwords = load_stopwords(custom_file="nonexistent.txt")
         assert isinstance(stopwords, set)
         assert len(stopwords) > 0
+
 
 class TestGenerateTrendWordcloud:
     def test_generate_wordcloud_basic(self, mock_news_by_date, tmp_path):

@@ -44,6 +44,7 @@ DEFAULT_FONT_CANDIDATES = [
 
 jieba3_tokenizer = jieba3.jieba3()
 
+
 # ---------------------------
 # Helper dataclasses
 # ---------------------------
@@ -147,10 +148,11 @@ def clean_text(text: str, remove_urls: bool = True, remove_emails: bool = True, 
 
 import contractions
 
+
 def preprocess_text(
-    text: str,
-    stopwords: list[str] | None = None,
-    min_len: int = 2
+        text: str,
+        stopwords: list[str] | None = None,
+        min_len: int = 2
 ) -> list[str]:
     """
     预处理管道：clean_text -> 扩展英文缩写 -> 分词 -> 停用词 & 长度过滤

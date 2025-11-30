@@ -11,6 +11,7 @@ from .core import (
     load_stopwords
 )
 
+
 # ============================================================
 # 工具函数
 # ============================================================
@@ -76,7 +77,7 @@ def run_wordcloud(args):
 
     news_by_date = defaultdict(list)
     for i, text in enumerate(news):
-        news_by_date[f"day{i+1}"].append(text)
+        news_by_date[f"day{i + 1}"].append(text)
 
     print("正在生成词云图...")
     files = generate_trend_wordcloud(news_by_date, stopwords=stopwords, font_path=getattr(args, "font_path", None))
