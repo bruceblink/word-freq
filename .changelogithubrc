@@ -1,6 +1,5 @@
 {
-  "onlyConventionalCommits": false,
-  "commitTypes": {
+  "types": {
     "feat": "🚀 Features",
     "fix": "🐛 Bug Fixes",
     "docs": "📚 Documentation",
