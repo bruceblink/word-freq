@@ -104,7 +104,11 @@ jobs:
       - name: Upload artifacts to release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: |
+            dist/wordfreq_cn-*.tar.gz
+            dist/wordfreq_cn-*-py3-none-any.whl
+          overwrite_files: true
+          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
