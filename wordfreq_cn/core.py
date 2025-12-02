@@ -19,6 +19,7 @@ from collections import Counter
 from dataclasses import dataclass, asdict
 from functools import lru_cache
 from importlib.resources import files
+from io import BytesIO
 from typing import Any
 
 import jieba3
@@ -390,7 +391,7 @@ def _generate_wordcloud(
         colormap: str | None = None,
         max_words: int | None = 100,
         mask: Any | None = None
-) -> str:
+) -> str | bytes:
     """
     生成单张词云图片。
     frequencies: Counter 或 dict {word: freq}
@@ -414,8 +415,17 @@ def _generate_wordcloud(
         wc.recolor(colormap=colormap)
 
     wc.generate_from_frequencies(frequencies)
-    wc.to_file(output_path)
-    return output_path
+    img = wc.to_image()
+
+    # 模式1：输出文件
+    if output_path:
+        img.save(output_path, format="PNG")
+        return output_path
+
+    # 模式2：返回 bytes
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 def generate_trend_wordcloud(
@@ -428,38 +438,79 @@ def generate_trend_wordcloud(
         width: int = 900,
         height: int = 600,
         max_words: int | None = 100,
-        background_color: str = "white"
-) -> list[str]:
+        background_color: str = "white",
+        return_bytes: bool = False,     # ⭐ 新增
+) -> list[str | bytes]:
     """
     根据日期生成多张词云（按 date_str key 顺序）。
     news_by_date: {"2025-01-01": [text1, text2, ...], ...}
-    返回生成的文件路径列表（按输入 dict 的 key 顺序）
+
+    - 如果 return_bytes=False（默认），返回文件路径列表。
+    - 如果 return_bytes=True，则返回 PNG bytes 列表。
     """
     from datetime import datetime
     import uuid
+
     current_date = datetime.now()  # 当前日期和时间
     font_path = font_path or _get_default_font_path()
-    file_list: list[str] = []
+
+    results: list[str] | list[bytes] = []
+
     for date_str, texts in sorted(news_by_date.items()):
         if not texts:
             continue
         # 如果date_str不存在则直接获取当前日期
         date_str = date_str or current_date.strftime('%Y-%m-%d')
-        # 每个日期创建一个文件夹
-        output_dir_final = f"{output_dir}{date_str}" if output_dir else f"wordclouds/{date_str}"
+        counter = count_word_frequency(
+            texts,
+            stopwords=stopwords,
+            min_len=min_len,
+            ngram_range=ngram_range
+        )
+
+        if not counter:
+            continue
+
+        # ⭐ 模式1：返回 bytes（不写文件）
+        if return_bytes:
+            img_bytes = _generate_wordcloud(
+                counter,
+                output_path=None,   # <- 关键
+                font_path=font_path,
+                width=width,
+                height=height,
+                max_words=max_words,
+                background_color=background_color,
+            )
+            results.append(img_bytes)
+            continue
+
+        # ⭐ 模式2：写文件（原始行为）
+        output_dir_final = (
+            f"{output_dir}{date_str}"
+            if output_dir else
+            f"wordclouds/{date_str}"
+        )
         os.makedirs(output_dir_final, exist_ok=True)
-        counter = count_word_frequency(texts, stopwords=stopwords, min_len=min_len, ngram_range=ngram_range)
-        if counter:
-            out_file = os.path.join(output_dir_final, f"wordcloud_{uuid.uuid4().hex}.png")
-            _generate_wordcloud(counter,
-                                out_file,
-                                font_path=font_path,
-                                width=width,
-                                height=height,
-                                max_words = max_words,
-                                background_color=background_color)
-            file_list.append(out_file)
-    return file_list
+
+        out_file = os.path.join(
+            output_dir_final,
+            f"wordcloud_{uuid.uuid4().hex}.png"
+        )
+
+        _generate_wordcloud(
+            counter,
+            out_file,
+            font_path=font_path,
+            width=width,
+            height=height,
+            max_words=max_words,
+            background_color=background_color,
+        )
+        results.append(out_file)
+
+    return results
+
 
 
 # ---------------------------
