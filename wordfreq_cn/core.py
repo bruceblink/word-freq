@@ -468,14 +468,13 @@ def generate_trend_wordcloud(
 
 def extract_keywords(
         data: str | list[str],
-        method: str = "textrank",
+        method: str = "tfidf",
         top_k: int = 20,
         stopwords: set[str] | None = None,
         **kwargs
 ) -> list[KeywordItem] | list[list[KeywordItem]]:
     """
     统一关键词提取接口：
-      - method = "textrank" -> expects data: str (single doc)
       - method = "tfidf" -> expects data: list[str] (corpus) and returns TfIdfResult.keywords
       - method = "tfidf_per_doc" -> expects data: list[str] and returns list of per-doc keywords
 
@@ -492,4 +491,4 @@ def extract_keywords(
             raise TypeError("tfidf_per_doc requires corpus list[str] as input")
         return extract_keywords_tfidf_per_doc(data, top_k=top_k, stopwords=stopwords, **kwargs)
     else:
-        raise ValueError(f"Unknown method: {method}. Supported: textrank, tfidf, tfidf_per_doc")
+        raise ValueError(f"Unknown method: {method}. Supported: tfidf, tfidf_per_doc")
