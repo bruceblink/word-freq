@@ -86,7 +86,7 @@ class TestCLI:
                 main()
                 output = mock_stdout.getvalue()
 
-            assert "正在生成词云图" in output
+            assert "正在生成趋势词云图" in output
             assert "wordcloud_day1.png" in output
 
     def test_cli_with_stopwords_file(self):
