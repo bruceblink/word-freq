@@ -137,3 +137,24 @@ class TestGenerateTrendWordcloud:
             output_dir=str(tmp_path)
         )
         assert files == []
+
+    def test_generate_wordcloud_bytes(self, mock_news_by_date, tmp_path):
+        """测试生成词云图bytes"""
+        files = generate_trend_wordcloud(
+            mock_news_by_date,
+            stopwords=set(),
+            return_bytes=True
+        )
+
+        # 1. 返回类型是 list
+        assert isinstance(files, list)
+        assert len(files) > 0
+
+        # 2. 每一项是 bytes
+        for item in files:
+            assert isinstance(item, bytes)
+            assert len(item) > 50   # PNG 至少几十字节，避免空字节串
+
+            # 3. 开头必须是 PNG 头（验证格式正确）
+            assert item.startswith(b"\x89PNG\r\n\x1a\n")
+

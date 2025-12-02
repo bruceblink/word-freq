@@ -1,4 +1,4 @@
-from io import StringIO
+from io import StringIO, BytesIO
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -132,3 +132,37 @@ class TestCLI:
             assert '"技术"' in output
             assert '"weight": 0.8' in output
             assert '"weight": 0.6' in output
+
+    def test_cli_wordcloud_bin(self):
+        """测试 wordcloud --bin 输出 PNG bytes"""
+        with patch("wordfreq_cn.cli.load_stopwords") as mock_load_stopwords, \
+             patch("wordfreq_cn.cli.generate_trend_wordcloud") as mock_gen_wc, \
+             patch("sys.stdout", new_callable=lambda: StdoutBuffer()) as mock_stdout:
+
+            mock_load_stopwords.return_value = set()
+            mock_gen_wc.return_value = [
+                b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00"
+            ]
+
+            test_args = [
+                "wordfreq-cn", "wordcloud",
+                "--news", "新闻1", "新闻2",
+                "--bin"
+            ]
+
+            with patch("sys.argv", test_args):
+                main()
+
+            output = mock_stdout.buffer.getvalue()
+            assert output.startswith(b"\x89PNG\r\n\x1a\n")
+            assert "生成".encode("utf-8") not in output
+            assert ".png".encode("utf-8") not in output
+
+
+class StdoutBuffer:
+    def __init__(self):
+        self.buffer = BytesIO()
+    def write(self, s):
+        self.buffer.write(s)
+    def flush(self):
+        pass
