@@ -37,6 +37,7 @@ wordfreq-cn tfidf --news "人工智能技术在医疗领域的应用取得突破
 wordfreq-cn freq --news "人工智能技术在医疗领域的应用取得突破" --topk 10
 wordfreq-cn wordcloud --news "人工智能技术在医疗领域的应用取得突破" "全球气候变化加剧"
 wordfreq-cn freq --news "人工智能技术在医疗领域的应用取得突破" --json
+wordfreq-cn wordcloud --news "人工智能技术在医疗领域的应用取得突破" "全球气候变化加剧" --bin
 ```
 
 ### 示例输出
@@ -120,8 +121,9 @@ news_by_date = defaultdict(list)
 for date, text in news_list:
     news_by_date[date].append(text)
 
-generate_trend_wordcloud(news_by_date, stopwords=stopwords)
+generate_trend_wordcloud(news_by_date, stopwords=stopwords) # 生成图片和存放的路径list
 # 词云图片默认保存到 wordclouds/ 目录
+generate_trend_wordcloud(news_by_date, stopwords=stopwords, return_bytes=True) # 返回二进制byte数据
 ```
 
 ---
