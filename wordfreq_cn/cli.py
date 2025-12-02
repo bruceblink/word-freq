@@ -2,7 +2,6 @@
 
 import argparse
 import json
-from collections import defaultdict
 
 from .core import (
     extract_keywords_tfidf,
@@ -62,15 +61,42 @@ def run_wordfreq(args):
 
 
 def run_wordcloud(args):
+    """
+    - 默认：生成多张趋势词云，输出文件名
+    - 加 --bin：输出单张趋势词云 PNG bytes 到 stdout
+    """
+    import sys
+    from collections import defaultdict
+
     news = load_news(args)
     stopwords = load_stopwords(args.stopwords)
 
+    # 按日期分组
     news_by_date = defaultdict(list)
     for i, text in enumerate(news):
         news_by_date[f"day{i + 1}"].append(text)
 
-    print("正在生成词云图...")
-    files = generate_trend_wordcloud(news_by_date, stopwords=stopwords, font_path=getattr(args, "font_path", None))
+    if args.bin:
+        # binary 模式：返回 bytes list
+        print("正在生成趋势词云图 byte...", file=sys.stderr)  # 提示信息写 stderr
+        files = generate_trend_wordcloud(
+            news_by_date,
+            stopwords=stopwords,
+            font_path=getattr(args, "font_path", None),
+            return_bytes=True
+        )
+        # 写入 stdout.buffer
+        for item in files:
+            sys.stdout.buffer.write(item)
+        return  # 直接返回，不打印文件名
+
+    # 非 bin 模式：返回文件路径
+    print("正在生成趋势词云图...")
+    files = generate_trend_wordcloud(
+        news_by_date,
+        stopwords=stopwords,
+        font_path=getattr(args, "font_path", None),
+    )
 
     print("\n生成的文件：")
     for f in files:
@@ -92,6 +118,8 @@ def main():
         p.add_argument("--stopwords", type=str, help="自定义停用词")
         p.add_argument("--topk", type=int, default=20, help="关键词数量")
         p.add_argument("--json", action="store_true", help="输出 JSON 格式")
+        # 新增：输出为二进制
+        p.add_argument("--bin", "-b", action="store_true", help="Output PNG bytes to stdout")
 
     # TF-IDF
     p1 = subparsers.add_parser("tfidf", help="使用 TF-IDF 提取关键词")
