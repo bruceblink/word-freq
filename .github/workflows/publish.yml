@@ -100,17 +100,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 9. 上传打包产物到刚刚创建的 Release
-      - name: Upload artifacts to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*
-          overwrite_files: true
-          draft: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # 10. 发布到 PyPI
+      # 9. 发布到 PyPI
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.12.3
         with:
