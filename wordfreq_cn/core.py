@@ -383,7 +383,7 @@ def _get_default_font_path() -> str:
 
 def _generate_wordcloud(
         frequencies: Counter,
-        output_path: str,
+        output_path: str | None,
         font_path: str | None = None,
         width: int = 900,
         height: int = 600,
