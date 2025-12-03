@@ -18,9 +18,6 @@
 ## 安装
 
 ```bash
-# 安装 Python 依赖
-pip install jieba3 scikit-learn wordcloud matplotlib numpy
-
 # 安装本地源码包（如果你有源码）
 pip install .
 
