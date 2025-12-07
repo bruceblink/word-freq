@@ -210,7 +210,7 @@ def segment_text(text: str) -> list[str]:
 
 def extract_keywords_tfidf(
         corpus: list[str],
-        top_k: int = 20,
+        top_k: int|None = 20,
         ngram_range: tuple[int, int] = DEFAULT_NGRAM_RANGE,
         stopwords: set[str] | None = None,
         max_features: int = DEFAULT_MAX_FEATURES,
@@ -268,53 +268,47 @@ def extract_keywords_tfidf(
     kw_items.sort(key=lambda x: x.weight, reverse=True)
 
     # 截断 top_k
-    top_keywords = kw_items[:top_k]
+    if top_k:
+        top_keywords = kw_items[:top_k]
+    else:
+        top_keywords = kw_items  # 返回所有关键词
 
     return TfIdfResult(keywords=top_keywords, vectorizer=vectorizer, matrix=X)
 
 
 def extract_keywords_tfidf_per_doc(
         corpus: list[str],
-        top_k: int = 10,
-        ngram_range: tuple[int, int] = DEFAULT_NGRAM_RANGE,
-        stopwords: set[str] | None = None,
-        max_features: int = DEFAULT_MAX_FEATURES,
-        min_df: int = 1,
-        max_df: float = 0.95,
-        sublinear_tf: bool = True,
-        token_pattern: str = DEFAULT_TOKEN_PATTERN,
+        top_k: int = 5,
+        **kwargs
 ) -> list[list[KeywordItem]]:
     """
-    对每篇文档分别提取 TF-IDF top_k 关键词。
+    对每篇文档分别提取 TF-IDF top_k 关键词 （基于全局 TF-IDF）。
     返回列表：每个元素对应原 corpus 中一篇文档的 top_k 关键词列表（KeywordItem）。
     """
-    if not corpus:
+    tfidf_result = extract_keywords_tfidf(corpus, top_k=None, **kwargs)
+
+    if tfidf_result.vectorizer is None:
         return []
-    # ----------------------------
-    # 文本预处理
-    # ----------------------------
-    processed_corpus = [
-        " ".join(preprocess_text(doc, stopwords=stopwords))
-        for doc in corpus
-    ]
 
-    vectorizer = TfidfVectorizer(max_features=max_features, ngram_range=ngram_range, token_pattern=token_pattern,
-                                 sublinear_tf=sublinear_tf, min_df=min_df, max_df=max_df)
+    X = tfidf_result.matrix         # shape = (n_docs, n_features)
+    feature_names = tfidf_result.vectorizer.get_feature_names_out()
 
-    X = vectorizer.fit_transform(processed_corpus)
-    feature_names = vectorizer.get_feature_names_out()
+    results = []
 
-    results: list[list[KeywordItem]] = []
-    # 对每一行（文档）寻找 top_k 非零特征
-    for doc_idx in range(X.shape[0]):
-        row = X[doc_idx]  # sparse row
-        if row.nnz == 0:
-            results.append([])
-            continue
-        # 排序取 top_k
-        idx_sorted = np.argsort(row.data)[::-1][:top_k]
-        doc_keywords = [KeywordItem(word=feature_names[row.indices[i]], weight=float(row.data[i])) for i in idx_sorted]
-        results.append(doc_keywords)
+    for row in X:  # 每行是一个文档的 TF-IDF 权重
+        row = row.toarray().ravel()
+        idx = row.argsort()[::-1][:top_k]  # top_k 索引
+
+        keywords = [
+            KeywordItem(
+                word=feature_names[i],
+                weight=float(row[i]),
+                count=1
+            )
+            for i in idx if row[i] > 0    # 忽略权重为 0 的词
+        ]
+
+        results.append(keywords)
 
     return results
 
