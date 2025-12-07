@@ -7,6 +7,7 @@ from collections import Counter
 from wordfreq_cn.core import (
     TfIdfResult,
     extract_keywords_tfidf,
+    extract_keywords_tfidf_per_doc,
     count_word_frequency,
     load_stopwords,
     generate_trend_wordcloud
@@ -45,6 +46,12 @@ class TestTFIDFKeywords:
         result = extract_keywords_tfidf(["单一文档测试"], top_k=3)
         assert len(result.keywords) <= 3
 
+    def test_tfidf__per_doc(self):
+        """测试单文档输入"""
+        result = extract_keywords_tfidf_per_doc(["单一文档测试"], top_k=3)
+        assert len(result) <= 1
+        assert len(result[0]) <= 3
+        assert "文档" in [ item.word for item in result[0]]
 
 class TestCountWords:
     def test_count_words_basic(self, sample_news):
