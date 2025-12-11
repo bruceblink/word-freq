@@ -22,8 +22,8 @@ from importlib.resources import files
 from io import BytesIO
 from typing import Any
 
-import jieba3
 import numpy as np
+import spacy_pkuseg
 from sklearn.feature_extraction.text import TfidfVectorizer
 from wordcloud import WordCloud
 
@@ -43,7 +43,7 @@ DEFAULT_FONT_CANDIDATES = [
     "msyh.ttc"  # Windows fallback
 ]
 
-jieba3_tokenizer = jieba3.jieba3()
+tokenizer = spacy_pkuseg.pkuseg()
 
 
 # ---------------------------
@@ -183,7 +183,7 @@ def preprocess_text(
 
 
 # ---------------------------
-# Segment (jieba3) with caching
+# Segment (spacy_pkuseg) with caching
 # ---------------------------
 
 @lru_cache(maxsize=65536)
@@ -191,7 +191,7 @@ def _cached_cut(text: str) -> tuple[str, ...]:
     """
     内部缓存分词结果（不可变 tuple），减少重复分词成本。
     """
-    return tuple(jieba3_tokenizer.cut_text(text))
+    return tuple(tokenizer.cut(text))
 
 
 def segment_text(text: str) -> list[str]:
