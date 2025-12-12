@@ -20,6 +20,7 @@ from dataclasses import dataclass, asdict
 from functools import lru_cache
 from importlib.resources import files
 from io import BytesIO
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -42,8 +43,6 @@ DEFAULT_FONT_CANDIDATES = [
     "NotoSansCJK-Regular.ttc",
     "msyh.ttc"  # Windows fallback
 ]
-
-tokenizer = spacy_pkuseg.pkuseg()
 
 
 # ---------------------------
@@ -186,11 +185,24 @@ def preprocess_text(
 # Segment (spacy_pkuseg) with caching
 # ---------------------------
 
+@lru_cache(maxsize=1)
+def get_tokenizer():
+    """
+    全局单例 tokenizer：
+    - 内部自动缓存
+    - 不会重复加载
+    """
+    return spacy_pkuseg.pkuseg(
+        model_name="mixed"
+    )
+
+
 @lru_cache(maxsize=65536)
 def _cached_cut(text: str) -> tuple[str, ...]:
     """
     内部缓存分词结果（不可变 tuple），减少重复分词成本。
     """
+    tokenizer = get_tokenizer()
     return tuple(tokenizer.cut(text))
 
 
