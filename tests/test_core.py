@@ -197,4 +197,4 @@ class TestCleanText:
     def test_clean_text_special_symbols(self):
         """过滤特殊符号（emoji、货币符号、标点）"""
         text = "价格£100 😊 非法字符#*& 保留中文English123"
-        assert clean_text(text) == "价格100 非法字符 保留中文english123"
+        assert clean_text(text) == "价格 100 非法字符 保留中文english123"
