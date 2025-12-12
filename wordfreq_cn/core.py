@@ -118,31 +118,49 @@ def load_stopwords(custom_file: str | None = None, hit_file: str | None = None) 
 # Text cleaning / preprocessing
 # ---------------------------
 
-def clean_text(text: str, remove_urls: bool = True, remove_emails: bool = True, remove_digits: bool = False) -> str:
+# 更全面的撇号集合（英文常见写法）
+APOSTROPHES = "['’＇`´]"
+
+def clean_text(
+        text: str,
+        remove_urls: bool = True,
+        remove_emails: bool = True,
+        remove_digits: bool = False,
+) -> str:
     """
-    基础清洗：去掉非中文/英文/数字字符, 允许英文缩写的撇号保留、合并空白，并可选删除 URL / email / 数字（或保留数字）。
-    返回小写形式（英文）。
+    文本基础清洗：
+    - 可选删除 URL / email
+    - 去除除中文、英文、数字外所有字符（可保留英文内部撇号）
+    - 可选是否删除数字
+    - 合并多空白
+    - 英文全部转为小写
     """
     if not text:
         return ""
     s = text
 
+    # -------- 1. 删除 URL / email --------
     if remove_urls:
         s = re.sub(r"https?://\S+|www\.\S+", " ", s)
 
     if remove_emails:
-        s = re.sub(r"\S+@\S+", " ", s)
+        s = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", " ", s)
 
-    # 保留中文、英文、数字和撇号
-    s = re.sub(r"[^\w\u4e00-\u9fff'’]", " ", s)
+    # -------- 2. 允许的字符：中文 + 英文 + 数字 + 撇号 --------
+    # 使用正向过滤比负向过滤更安全
+    s = re.sub(fr"[^A-Za-z0-9\u4e00-\u9fff{APOSTROPHES}]+", " ", s)
 
-    # 删除不在单词内部的撇号（确保 didn't / isn't 这种才被保留）
-    s = re.sub(r"(?<![A-Za-z])[’']+|[’']+(?![A-Za-z])", " ", s)
+    # -------- 3. 删除非英文单词内部的撇号 --------
+    # didn’t / didn’t OK，但 'hello' 或 hello' 都清理掉
+    s = re.sub(fr"(?<![A-Za-z]){APOSTROPHES}+(?![A-Za-z])", " ", s)
 
+    # -------- 4. 可选：删除数字 --------
     if remove_digits:
         s = re.sub(r"\d+", " ", s)
 
+    # -------- 5. 清理空白 --------
     s = re.sub(r"\s+", " ", s).strip()
+
     return s.lower()
 
 
