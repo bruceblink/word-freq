@@ -38,3 +38,17 @@ def mock_news_by_date():
         "day2": ["新闻二内容", "新闻二标题"],
         "day3": ["新闻三内容", "新闻三标题"]
     }
+
+
+@pytest.fixture(autouse=True)
+def mock_segment_text(monkeypatch):
+    """
+    在 CI 环境中 mock segment_text，避免加载 pkuseg 模型。
+    """
+    import os
+    if os.getenv("CI") == "true":
+        def fake_segment_text(text: str):
+            # 最简单的测试切词方法即可，不影响 TF-IDF 测试
+            return text.split()
+
+        monkeypatch.setattr("wordfreq_cn.core.segment_text", fake_segment_text)
