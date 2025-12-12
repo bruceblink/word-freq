@@ -149,13 +149,17 @@ def clean_text(
         s = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", " ", s)
 
     # -------- 2. 允许的字符：中文 + 英文 + 数字 + 撇号 --------
-    # 使用正向过滤比负向过滤更安全
-    s = re.sub(fr"[^A-Za-z0-9\u4e00-\u9fff{APOSTROPHES}]+", " ", s)
-    s = re.sub(fr"[^A-Za-z0-9\u4e00-\u9fff{APOSTROPHES_C}]+", " ", s)
+    # 正确转义撇号字符
+    apostrophes_chars = "'’＇`´!"
+    escaped_apostrophes = re.escape(apostrophes_chars)
+    s = re.sub(fr"[^A-Za-z0-9\u4e00-\u9fff{escaped_apostrophes}]+", " ", s)
 
     # -------- 3. 删除非英文单词内部的撇号 --------
-    # didn’t / didn’t OK，但 'hello' 或 hello' 都清理掉
-    s = re.sub(fr"(?<![A-Za-z]){APOSTROPHES}+(?![A-Za-z])", " ", s)
+    # 先统一所有撇号为标准撇号 '
+    for apostrophe in apostrophes_chars:
+        s = s.replace(apostrophe, "'")
+    # 删除不在英文单词内部的撇号
+    s = re.sub(r"(?<![A-Za-z])'|'(?![A-Za-z])", " ", s)
 
     # -------- 4. 可选：删除数字 --------
     if remove_digits:
