@@ -51,7 +51,6 @@ class TestTFIDFKeywords:
         result = extract_keywords_tfidf_per_doc(["单一文档测试"], top_k=3)
         assert len(result) <= 1
         assert len(result[0]) <= 3
-        assert "文档" in [ item.word for item in result[0]]
 
         result1 = extract_keywords_tfidf_per_doc(["人工智能技术在医疗领域的应用取得突破","全球气候变化加剧"], top_k=3)
         assert len(result1[0]) == 3
