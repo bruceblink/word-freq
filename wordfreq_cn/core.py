@@ -25,6 +25,7 @@ from typing import Any
 
 import numpy as np
 import spacy_pkuseg
+import unicodedata
 from sklearn.feature_extraction.text import TfidfVectorizer
 from wordcloud import WordCloud
 
@@ -119,7 +120,7 @@ def load_stopwords(custom_file: str | None = None, hit_file: str | None = None) 
 # ---------------------------
 
 # 更全面的撇号集合（英文常见写法）
-APOSTROPHES = "['’＇`´]"
+APOSTROPHES = "['’＇`´!]"
 
 def clean_text(
         text: str,
