@@ -121,6 +121,7 @@ def load_stopwords(custom_file: str | None = None, hit_file: str | None = None) 
 
 # 更全面的撇号集合（英文常见写法）
 APOSTROPHES = "['’＇`´!]"
+APOSTROPHES_C = "'’＇`´!"
 
 def clean_text(
         text: str,
@@ -150,6 +151,7 @@ def clean_text(
     # -------- 2. 允许的字符：中文 + 英文 + 数字 + 撇号 --------
     # 使用正向过滤比负向过滤更安全
     s = re.sub(fr"[^A-Za-z0-9\u4e00-\u9fff{APOSTROPHES}]+", " ", s)
+    s = re.sub(fr"[^A-Za-z0-9\u4e00-\u9fff{APOSTROPHES_C}]+", " ", s)
 
     # -------- 3. 删除非英文单词内部的撇号 --------
     # didn’t / didn’t OK，但 'hello' 或 hello' 都清理掉
