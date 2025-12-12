@@ -10,7 +10,7 @@ from wordfreq_cn.core import (
     extract_keywords_tfidf_per_doc,
     count_word_frequency,
     load_stopwords,
-    generate_trend_wordcloud
+    generate_trend_wordcloud, clean_text
 )
 
 
@@ -169,3 +169,32 @@ class TestGenerateTrendWordcloud:
             # 3. 开头必须是 PNG 头（验证格式正确）
             assert item.startswith(b"\x89PNG\r\n\x1a\n")
 
+class TestCleanText:
+    def test_clean_text_basic_english_chinese(self):
+        """中英文混合 + 多空格压缩"""
+        text = "  Hello   世界!  "
+        assert clean_text(text) == "hello 世界"
+
+
+    def test_clean_text_remove_url_email(self):
+        """删除 URL 和 email"""
+        text = "访问 https://example.com 或联系 test@example.com"
+        assert clean_text(text) == "访问 或联系"
+
+
+    def test_clean_text_apostrophe_handling(self):
+        """保留英文单词中的撇号，但去掉孤立撇号"""
+        text = "Don't do it ’ now ' test"
+        assert clean_text(text) == "don't do it now test"
+
+
+    def test_clean_text_remove_digits(self):
+        """删除数字"""
+        text = "AI 2025 技术 123"
+        assert clean_text(text, remove_digits=True) == "ai 技术"
+
+
+    def test_clean_text_special_symbols(self):
+        """过滤特殊符号（emoji、货币符号、标点）"""
+        text = "价格£100 😊 非法字符#*& 保留中文English123"
+        assert clean_text(text) == "价格100 非法字符 保留中文english123"
