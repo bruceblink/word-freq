@@ -12,20 +12,24 @@ wordfreq_cn.core
 - 词云生成 (generate_wordcloud, generate_trend_wordcloud)
 """
 
+import contextlib
+import io
 import logging
 import os
 import re
+import uuid
 from collections import Counter
 from dataclasses import dataclass, asdict
+from datetime import datetime
 from functools import lru_cache
 from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
 from typing import Any
 
+import contractions
 import numpy as np
 import spacy_pkuseg
-import unicodedata
 from sklearn.feature_extraction.text import TfidfVectorizer
 from wordcloud import WordCloud
 
@@ -38,6 +42,7 @@ logger.addHandler(logging.NullHandler())
 DEFAULT_MAX_FEATURES = 2000
 DEFAULT_NGRAM_RANGE = (1, 2)
 DEFAULT_TOKEN_PATTERN = r"(?u)[\u4e00-\u9fffA-Za-z0-9]+"
+DEFAULT_PKUSEG_MODEL = "news"   # news 模型比 mixed 节省 ~30-50% 内存，且对新闻语料准确率更高
 DEFAULT_FONT_CANDIDATES = [
     "SourceHanSansHWSC-VF.ttf",
     "SourceHanSansSC-Regular.otf",
@@ -119,9 +124,16 @@ def load_stopwords(custom_file: str | None = None, hit_file: str | None = None) 
 # Text cleaning / preprocessing
 # ---------------------------
 
-# 更全面的撇号集合（英文常见写法）
-APOSTROPHES = "['’＇`´!]"
-APOSTROPHES_C = "'’＇`´!"
+# 预编译正则，避免每次调用重新编译
+_RE_URL = re.compile(r"https?://\S+|www\.\S+")
+_RE_EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+_APOSTROPHES_CHARS = "''\u2019\uff07`\u00b4!"
+_RE_KEEP_CHARS = re.compile(
+    fr"[^A-Za-z0-9\u4e00-\u9fff{re.escape(_APOSTROPHES_CHARS)}]+"
+)
+_RE_ISOLATED_APOSTROPHE = re.compile(r"(?<![A-Za-z])'|'(?![A-Za-z])")
+_RE_DIGITS = re.compile(r"\d+")
+_RE_WHITESPACE = re.compile(r"\s+")
 
 def clean_text(
         text: str,
@@ -171,17 +183,16 @@ def clean_text(
     return s.lower()
 
 
-import contractions
-
 
 def preprocess_text(
         text: str,
-        stopwords: list[str] | None = None,
+        stopwords: set[str] | None = None,
         min_len: int = 2
 ) -> list[str]:
     """
     预处理管道：clean_text -> 扩展英文缩写 -> 分词 -> 停用词 & 长度过滤
     返回词列表（原始词形，不再小写中文）
+    stopwords 应为已小写的集合（由 load_stopwords 返回的就是如此）。
     """
 
     # 1. 清洗中文/英文/符号
@@ -194,11 +205,11 @@ def preprocess_text(
     words = segment_text(cleaned)
 
     # 4. 停词过滤 + 词长过滤
+    # stopwords 已是小写，只需小写 w 后查询，无需每次重建集合
     if stopwords:
-        sw = set(w.lower() for w in stopwords)
         words = [
             w for w in words
-            if w and w.lower() not in sw and len(w) >= min_len
+            if w and w.lower() not in stopwords and len(w) >= min_len
         ]
     else:
         words = [w for w in words if w and len(w) >= min_len]
@@ -211,25 +222,30 @@ def preprocess_text(
 # ---------------------------
 
 @lru_cache(maxsize=1)
-def get_tokenizer():
+def get_tokenizer(model_name: str = DEFAULT_PKUSEG_MODEL):
     """
-    全局单例 tokenizer：
-    - 内部自动缓存
-    - 不会重复加载
+    全局单例 tokenizer。
+    pkuseg 在加载模型时会打印 "features.msgpack does not exist" 警告到 stderr，
+    此处静默该输出（属于 pkuseg 内部已知的格式回退提示，不影响功能）。
     """
-    return spacy_pkuseg.pkuseg(
-        model_name="mixed"
-    )
+    buf = io.StringIO()
+    with contextlib.redirect_stderr(buf):
+        tokenizer = spacy_pkuseg.pkuseg(model_name=model_name)
+    msg = buf.getvalue().strip()
+    if msg:
+        logger.debug("pkuseg loader message: %s", msg)
+    return tokenizer
 
 
-@lru_cache(maxsize=65536)
+# 新闻语料中每篇文档几乎唯一，大 maxsize 命中率极低且大量占用内存。
+# 保留小缓存以应对批量处理中短语/标题重复出现的场景。
+@lru_cache(maxsize=512)
 def _cached_cut(text: str) -> tuple[str, ...]:
     """
     内部缓存分词结果（不可变 tuple），减少重复分词成本。
     """
     tokenizer = get_tokenizer()
     return tuple(tokenizer.cut(text))
-
 
 def segment_text(text: str) -> list[str]:
     """
@@ -331,23 +347,22 @@ def extract_keywords_tfidf_per_doc(
     X = tfidf_result.matrix
     feature_names = tfidf_result.vectorizer.get_feature_names_out()
 
-    # 2. 一次性转 dense（提升性能）
-    dense = X.toarray()              # shape same as X
-
     results: list[list[KeywordItem]] = []
 
-    # 3. 对每篇文档提取 top_k 关键词
-    for row in dense:
+    # 2. 对每篇文档提取 top_k 关键词（逐行稀疏访问，避免全量 dense 转换）
+    for i in range(X.shape[0]):
+        row = X.getrow(i)  # CSR sparse row
+        row_data = row.toarray().ravel()  # 仅当前行转 dense
         # 从大到小排序并取前 top_k
-        idx = row.argsort()[::-1][:top_k]
+        idx = row_data.argsort()[::-1][:top_k]
 
         keywords = [
             KeywordItem(
-                word=feature_names[i],
-                weight=float(row[i]),
+                word=feature_names[j],
+                weight=float(row_data[j]),
                 count=1
             )
-            for i in idx
+            for j in idx
         ]
 
         results.append(keywords)
@@ -402,7 +417,7 @@ def _get_default_font_path() -> str:
             if candidate.exists():
                 return str(candidate)
     except Exception as e:
-        logger.debug(f"package fonts not available: {e}")
+        logger.debug("package fonts not available: %s", e)
 
     # 尝试常见系统路径（简单尝试）
     sys_candidates = [
@@ -438,18 +453,18 @@ def _generate_wordcloud(
 
     font_path = font_path or _get_default_font_path()
 
-    wc = WordCloud(
+    wc_kwargs: dict[str, Any] = dict(
         font_path=font_path,
         width=width,
         height=height,
         background_color=background_color,
-        max_words = max_words,
+        max_words=max_words,
         mask=mask,
     )
     if colormap:
-        # WordCloud 会使用 colormap 参数通过 recolor
-        wc.recolor(colormap=colormap)
+        wc_kwargs["colormap"] = colormap
 
+    wc = WordCloud(**wc_kwargs)
     wc.generate_from_frequencies(frequencies)
     img = wc.to_image()
 
@@ -484,13 +499,10 @@ def generate_trend_wordcloud(
     - 如果 return_bytes=False（默认），返回文件路径列表。
     - 如果 return_bytes=True，则返回 PNG bytes 列表。
     """
-    from datetime import datetime
-    import uuid
-
     current_date = datetime.now()  # 当前日期和时间
     font_path = font_path or _get_default_font_path()
 
-    results: list[str] | list[bytes] = []
+    results: list[str | bytes] = []
 
     for date_str, texts in sorted(news_by_date.items()):
         if not texts:
@@ -523,9 +535,9 @@ def generate_trend_wordcloud(
 
         # ⭐ 模式2：写文件（原始行为）
         output_dir_final = (
-            f"{output_dir}{date_str}"
+            os.path.join(output_dir, date_str)
             if output_dir else
-            f"wordclouds/{date_str}"
+            os.path.join("wordclouds", date_str)
         )
         os.makedirs(output_dir_final, exist_ok=True)
 
