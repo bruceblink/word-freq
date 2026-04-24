@@ -2,6 +2,8 @@
 
 import argparse
 import json
+import os
+from typing import Iterator
 
 from .core import (
     extract_keywords_tfidf,
@@ -15,13 +17,20 @@ from .core import (
 # 工具函数
 # ============================================================
 
+def _iter_input_file_lines(path: str) -> Iterator[str]:
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            text = line.strip()
+            if text:
+                yield text
+
+
 def load_news(args):
     """从 --news 或 --input-file 加载文本"""
     if args.news:
         return args.news
     if args.input_file:
-        with open(args.input_file, encoding="utf-8") as f:
-            return [line.strip() for line in f if line.strip()]
+        return list(_iter_input_file_lines(args.input_file))
     raise ValueError("需要提供 --news 或 --input-file")
 
 
@@ -33,10 +42,17 @@ def run_tfidf(args):
     news = load_news(args)
     stopwords = load_stopwords(args.stopwords)
 
+    low_memory = os.getenv("WORDFREQ_LOW_MEMORY", "").strip().lower() in {"1", "true", "yes"}
+    max_features = 800 if low_memory else 2000
+    ngram_range = (1, 1) if low_memory else (1, 2)
+
     result = extract_keywords_tfidf(
         corpus=news,
         top_k=args.topk,
-        stopwords=stopwords
+        stopwords=stopwords,
+        include_artifacts=False,
+        max_features=max_features,
+        ngram_range=ngram_range,
     )
     # 输出 JSON 或文本
     if args.json:
@@ -48,8 +64,8 @@ def run_tfidf(args):
 
 
 def run_wordfreq(args):
-    news = load_news(args)
     stopwords = load_stopwords(args.stopwords)
+    news = args.news if args.news else _iter_input_file_lines(args.input_file)
     counter = count_word_frequency(news, stopwords)
 
     if args.json:

@@ -25,11 +25,10 @@ from functools import lru_cache
 from importlib.resources import files
 from io import BytesIO
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable, Iterator
 
 import contractions
 import numpy as np
-import spacy_pkuseg
 from sklearn.feature_extraction.text import TfidfVectorizer
 from wordcloud import WordCloud
 
@@ -42,9 +41,10 @@ logger.addHandler(logging.NullHandler())
 DEFAULT_MAX_FEATURES = 2000
 DEFAULT_NGRAM_RANGE = (1, 2)
 DEFAULT_TOKEN_PATTERN = r"(?u)[\u4e00-\u9fffA-Za-z0-9]+"
-DEFAULT_PKUSEG_MODEL = "news"   # news 模型比 mixed 节省 ~30-50% 内存，且对新闻语料准确率更高
+DEFAULT_PKUSEG_MODEL = "news"
+DEFAULT_SEGMENTER = os.getenv("WORDFREQ_SEGMENTER", "pkuseg").strip().lower() or "pkuseg"
 DEFAULT_FONT_CANDIDATES = [
-    "SourceHanSansHWSC-VF.ttf",
+     "SourceHanSansHWSC-VF.ttf",
     "SourceHanSansSC-Regular.otf",
     "NotoSansCJK-Regular.ttc",
     "msyh.ttc"  # Windows fallback
@@ -217,17 +217,30 @@ def preprocess_text(
     return words
 
 
+def _current_segmenter() -> str:
+    mode = os.getenv("WORDFREQ_SEGMENTER", DEFAULT_SEGMENTER).strip().lower()
+    return mode if mode in {"pkuseg", "simple"} else "pkuseg"
+
+
 # ---------------------------
-# Segment (spacy_pkuseg) with caching
+# Segment with caching
 # ---------------------------
+
+def _simple_segment(text: str) -> list[str]:
+    return [w for w in text.split() if w.strip()]
+
 
 @lru_cache(maxsize=1)
 def get_tokenizer(model_name: str = DEFAULT_PKUSEG_MODEL):
     """
     全局单例 tokenizer。
-    pkuseg 在加载模型时会打印 "features.msgpack does not exist" 警告到 stderr，
-    此处静默该输出（属于 pkuseg 内部已知的格式回退提示，不影响功能）。
+    当 WORDFREQ_SEGMENTER=simple 时，不加载 pkuseg 大模型。
     """
+    if _current_segmenter() == "simple":
+        return None
+
+    import spacy_pkuseg
+
     buf = io.StringIO()
     with contextlib.redirect_stderr(buf):
         tokenizer = spacy_pkuseg.pkuseg(model_name=model_name)
@@ -239,13 +252,16 @@ def get_tokenizer(model_name: str = DEFAULT_PKUSEG_MODEL):
 
 # 新闻语料中每篇文档几乎唯一，大 maxsize 命中率极低且大量占用内存。
 # 保留小缓存以应对批量处理中短语/标题重复出现的场景。
-@lru_cache(maxsize=512)
+@lru_cache(maxsize=128)
 def _cached_cut(text: str) -> tuple[str, ...]:
     """
     内部缓存分词结果（不可变 tuple），减少重复分词成本。
     """
     tokenizer = get_tokenizer()
+    if tokenizer is None:
+        return tuple(_simple_segment(text))
     return tuple(tokenizer.cut(text))
+
 
 def segment_text(text: str) -> list[str]:
     """
@@ -254,12 +270,55 @@ def segment_text(text: str) -> list[str]:
     """
     if not text:
         return []
+
+    if _current_segmenter() == "simple":
+        return _simple_segment(text)
+
+    if len(text) > 500:
+        tokenizer = get_tokenizer()
+        if tokenizer is None:
+            return _simple_segment(text)
+        return [w for w in tokenizer.cut(text) if w.strip()]
+
     return [w for w in _cached_cut(text) if w.strip()]
 
 
 # ---------------------------
 # TF-IDF: 全局 & per-doc 提取
 # ---------------------------
+
+def _iter_processed_corpus(corpus: Iterable[str], stopwords: set[str] | None = None) -> Iterator[str]:
+    for doc in corpus:
+        yield " ".join(preprocess_text(doc, stopwords=stopwords))
+
+
+def _fit_tfidf_matrix(
+        corpus: list[str],
+        ngram_range: tuple[int, int],
+        stopwords: set[str] | None,
+        max_features: int,
+        min_df: int,
+        max_df: float,
+        sublinear_tf: bool,
+        token_pattern: str,
+) -> tuple[TfidfVectorizer, Any, Any]:
+    n_docs = len(corpus)
+    adjusted_max_df = 1.0 if n_docs == 1 else max_df
+
+    vectorizer = TfidfVectorizer(
+        max_features=max_features,
+        ngram_range=ngram_range,
+        token_pattern=token_pattern,
+        sublinear_tf=sublinear_tf,
+        min_df=min_df,
+        max_df=adjusted_max_df,
+        dtype=np.float32,
+    )
+    X = vectorizer.fit_transform(_iter_processed_corpus(corpus, stopwords=stopwords))
+    feature_names = vectorizer.get_feature_names_out()
+    return vectorizer, X, feature_names
+
+
 
 def extract_keywords_tfidf(
         corpus: list[str],
@@ -271,6 +330,7 @@ def extract_keywords_tfidf(
         max_df: float = 0.95,
         sublinear_tf: bool = True,
         token_pattern: str = DEFAULT_TOKEN_PATTERN,
+        include_artifacts: bool = True,
 ) -> TfIdfResult:
     """
     全局 TF-IDF：基于整个语料库计算 TF-IDF，自动清洗文本 + 展开缩写 + 分词。
@@ -283,33 +343,22 @@ def extract_keywords_tfidf(
     if not corpus:
         return TfIdfResult([], None, None)
 
-    # ----------------------------
-    # 文本预处理
-    # ----------------------------
-    processed_corpus = [
-        " ".join(preprocess_text(doc, stopwords=stopwords))
-        for doc in corpus
-    ]
-
-    # ----------------------------
-    # 修复单文档时 max_df 问题
-    # ----------------------------
-    n_docs = len(processed_corpus)
-    adjusted_max_df = max_df
-    if n_docs == 1:
-        adjusted_max_df = 1.0
-
-    vectorizer = TfidfVectorizer(max_features=max_features, ngram_range=ngram_range, token_pattern=token_pattern,
-                                 sublinear_tf=sublinear_tf, min_df=min_df, max_df=adjusted_max_df)
-
-    X = vectorizer.fit_transform(processed_corpus)  # shape: (n_docs, n_features)
-    feature_names = vectorizer.get_feature_names_out()
+    vectorizer, X, feature_names = _fit_tfidf_matrix(
+        corpus=corpus,
+        ngram_range=ngram_range,
+        stopwords=stopwords,
+        max_features=max_features,
+        min_df=min_df,
+        max_df=max_df,
+        sublinear_tf=sublinear_tf,
+        token_pattern=token_pattern,
+    )
 
     # 按列求和得到每个特征在所有文档中的 TF-IDF 总权重
     weights_array = np.asarray(X.sum(axis=0)).ravel()
 
     # 统计每个 token 在多少个文档中出现（非零计数）
-    doc_counts = np.asarray((X > 0).sum(axis=0)).ravel()
+    doc_counts = np.diff(X.tocsc().indptr)
 
     # 包装结果
     kw_items = [
@@ -317,14 +366,15 @@ def extract_keywords_tfidf(
         for i in range(len(feature_names))
     ]
 
-    # 排序
     kw_items.sort(key=lambda x: x.weight, reverse=True)
 
-    # 截断 top_k
     if top_k:
         top_keywords = kw_items[:top_k]
     else:
-        top_keywords = kw_items  # 返回所有关键词
+        top_keywords = kw_items
+
+    if not include_artifacts:
+        return TfIdfResult(keywords=top_keywords, vectorizer=None, matrix=None)
 
     return TfIdfResult(keywords=top_keywords, vectorizer=vectorizer, matrix=X)
 
@@ -338,31 +388,44 @@ def extract_keywords_tfidf_per_doc(
     对每篇文档分别提取 TF-IDF top_k 关键词 （基于全局 TF-IDF）。
     返回列表：每个元素对应原 corpus 中一篇文档的 top_k 关键词列表（KeywordItem）。
     """
-
-    # 1. 计算全局 TF-IDF（不截断）
-    tfidf_result = extract_keywords_tfidf(corpus, top_k=None, **kwargs)
-    if tfidf_result.vectorizer is None or tfidf_result.matrix is None:
+    if not corpus:
         return []
 
-    X = tfidf_result.matrix
-    feature_names = tfidf_result.vectorizer.get_feature_names_out()
+    _, X, feature_names = _fit_tfidf_matrix(
+        corpus=corpus,
+        ngram_range=kwargs.get("ngram_range", DEFAULT_NGRAM_RANGE),
+        stopwords=kwargs.get("stopwords"),
+        max_features=kwargs.get("max_features", DEFAULT_MAX_FEATURES),
+        min_df=kwargs.get("min_df", 1),
+        max_df=kwargs.get("max_df", 0.95),
+        sublinear_tf=kwargs.get("sublinear_tf", True),
+        token_pattern=kwargs.get("token_pattern", DEFAULT_TOKEN_PATTERN),
+    )
 
     results: list[list[KeywordItem]] = []
 
-    # 2. 对每篇文档提取 top_k 关键词（逐行稀疏访问，避免全量 dense 转换）
     for i in range(X.shape[0]):
-        row = X.getrow(i)  # CSR sparse row
-        row_data = row.toarray().ravel()  # 仅当前行转 dense
-        # 从大到小排序并取前 top_k
-        idx = row_data.argsort()[::-1][:top_k]
+        row = X.getrow(i)
+        if row.nnz == 0:
+            results.append([])
+            continue
+
+        values = row.data
+        indices = row.indices
+
+        if top_k and row.nnz > top_k:
+            top_positions = np.argpartition(values, -top_k)[-top_k:]
+            sorted_positions = top_positions[np.argsort(values[top_positions])[::-1]]
+        else:
+            sorted_positions = np.argsort(values)[::-1]
 
         keywords = [
             KeywordItem(
-                word=feature_names[j],
-                weight=float(row_data[j]),
-                count=1
+                word=feature_names[indices[pos]],
+                weight=float(values[pos]),
+                count=1,
             )
-            for j in idx
+            for pos in sorted_positions
         ]
 
         results.append(keywords)
@@ -370,19 +433,23 @@ def extract_keywords_tfidf_per_doc(
     return results
 
 
+
 # ---------------------------
 # 词频统计（支持 n-gram）
 # ---------------------------
 
-def _generate_ngrams(words: list[str], n: int) -> list[str]:
+def _generate_ngrams(words: list[str], n: int) -> Iterator[str]:
     if n <= 1:
-        return words
+        for word in words:
+            yield word
+        return
     # 中文常用连接方式，无空格
-    return ["".join(words[i:i + n]) for i in range(len(words) - n + 1)]
+    for i in range(len(words) - n + 1):
+        yield "".join(words[i:i + n])
 
 
 def count_word_frequency(
-        corpus: list[str],
+        corpus: Iterable[str],
         stopwords: set[str] | None = None,
         min_len: int = 2,
         ngram_range: tuple[int, int] = (1, 1)
@@ -395,10 +462,12 @@ def count_word_frequency(
     for text in corpus:
         words = preprocess_text(text, stopwords=stopwords, min_len=min_len)
         for n in range(ngram_range[0], ngram_range[1] + 1):
-            ngrams = words if n == 1 else _generate_ngrams(words, n)
-            # 过滤长度太短的 gram
-            counter.update([g for g in ngrams if len(g) >= min_len])
+            if n == 1:
+                counter.update(g for g in words if len(g) >= min_len)
+            else:
+                counter.update(g for g in _generate_ngrams(words, n) if len(g) >= min_len)
     return counter
+
 
 
 # ---------------------------
